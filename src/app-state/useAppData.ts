@@ -4,7 +4,8 @@ import type { GoalTarget } from '@/domain/goals/goals';
 import type { Profile } from '@/domain/profile';
 import type { StationResults } from '@/domain/scoring/awards';
 import { useFocusEffect } from 'expo-router';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { AppState } from 'react-native';
 import { now } from './clock';
 import { useRepositories } from './RepositoriesContext';
 
@@ -17,12 +18,19 @@ export type AppData = {
   refresh(): void;
 };
 
-/** Everything the screens show, re-read whenever the screen gains focus or refresh() is called. */
+/** Everything the screens show, re-read when the screen gains focus, the app returns to the foreground, or refresh() is called. */
 export function useAppData(): AppData {
   const repos = useRepositories();
   const [version, setVersion] = useState(0);
   const refresh = useCallback(() => setVersion((v) => v + 1), []);
   useFocusEffect(refresh);
+  // Re-read when the app comes back to the foreground, so countdowns roll over to a new day.
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state === 'active') refresh();
+    });
+    return () => sub.remove();
+  }, [refresh]);
 
   const data = useMemo(() => ({
     today: todayInSingapore(now()),

@@ -95,3 +95,17 @@ test('deleting the newest push-up result falls back to the previous one on Home'
   expect(await screen.findByText('30 reps')).toBeTruthy();
   expect(screen.queryByText('35 reps')).toBeNull();
 });
+
+test('countdown updates when the app returns from the background on a new day', async () => {
+  const clock = jest.requireActual('@/app-state/clock');
+  const { AppState } = jest.requireActual('react-native');
+  const listen = jest.spyOn(AppState, 'addEventListener');
+  await home({ profile: P });
+  expect(await screen.findByText('41 days to ORD')).toBeTruthy();
+  jest.spyOn(clock, 'now').mockImplementation(() => new Date('2026-10-22T01:00:00Z'));
+  const handlers = listen.mock.calls.filter(([type]) => type === 'change').map(([, h]) => h as (s: string) => void);
+  expect(handlers.length).toBeGreaterThan(0);
+  const { act } = jest.requireActual('expo-router/testing-library');
+  await act(async () => handlers.forEach((h) => h('active')));
+  expect(await screen.findByText('40 days to ORD')).toBeTruthy();
+});
