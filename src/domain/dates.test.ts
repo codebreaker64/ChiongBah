@@ -1,4 +1,4 @@
-import { ageOn, daysBetween, parseLocalDate, todayInSingapore } from './dates';
+import { ageOn, daysBetween, formatLocalDate, parseLocalDate, todayInSingapore } from './dates';
 
 test('parseLocalDate accepts real dates only', () => {
   expect(parseLocalDate('2028-02-29')).toBe('2028-02-29');
@@ -22,4 +22,8 @@ test('ageOn handles birthdays and 29 Feb', () => {
   expect(ageOn('2004-10-21', '2026-10-21')).toBe(22);
   expect(ageOn('2004-02-29', '2026-02-28')).toBe(21);
   expect(ageOn('2004-02-29', '2026-03-01')).toBe(22);
+});
+
+test('formatLocalDate', () => {
+  expect(formatLocalDate('2026-10-01')).toBe('1 Oct 2026');
 });

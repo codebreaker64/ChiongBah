@@ -45,3 +45,11 @@ export function ageOn(dob: LocalDate, on: LocalDate): number {
   if (m < bm || (m === bm && d < bd)) age -= 1;
   return age;
 }
+
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+/** '2026-10-01' → '1 Oct 2026' */
+export function formatLocalDate(date: LocalDate): string {
+  const [y, m, d] = parts(date);
+  return `${d} ${MONTHS[m - 1]} ${y}`;
+}

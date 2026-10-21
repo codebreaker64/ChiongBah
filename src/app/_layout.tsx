@@ -11,6 +11,7 @@ export default function RootLayout() {
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="onboarding/index" />
         <Stack.Screen name="onboarding/profile" />
+        <Stack.Screen name="log/new" options={{ presentation: 'modal' }} />
       </Stack>
     </RepositoriesProvider>
   );
