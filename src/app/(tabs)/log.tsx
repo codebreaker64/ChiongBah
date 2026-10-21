@@ -3,6 +3,7 @@ import { useRepositories } from '@/app-state/RepositoriesContext';
 import { useAppData } from '@/app-state/useAppData';
 import { Body, colors, Eyebrow, Header, HeaderAction, Screen } from '@/ui/kit';
 import { SOURCE_LABEL, sessionDate, sessionValue, STATION_LABEL } from '@/ui/labels';
+import { Emblem } from '@/ui/Emblem';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
@@ -25,9 +26,14 @@ export default function Log() {
   const [confirming, setConfirming] = useState<number | null>(null);
 
   return (
-    <Screen>
+    <Screen onRefresh={refresh}>
       <Header title="Log" action={<HeaderAction label="+ Add result" onPress={() => router.push('/log/new')} />} />
-      {sessions.length === 0 ? <Body muted>No results yet. Add one after your next training session.</Body> : null}
+      {sessions.length === 0 ? (
+        <View style={styles.empty}>
+          <Emblem symbol={{ ios: 'figure.strengthtraining.traditional', android: 'fitness_center', web: 'fitness_center' }} />
+          <Body muted>No results yet. Add one after your next training session.</Body>
+        </View>
+      ) : null}
       {byDay(sessions).map((group) => (
         <View key={group.day} style={styles.group}>
           <Eyebrow>{group.day}</Eyebrow>
@@ -67,6 +73,7 @@ export default function Log() {
 
 const styles = StyleSheet.create({
   group: { gap: 8, marginTop: 4 },
+  empty: { alignItems: 'center', gap: 20, paddingVertical: 40 },
   card: { backgroundColor: colors.card, borderRadius: 12, paddingHorizontal: 16, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border },
   row: { paddingVertical: 14, gap: 8 },
   divider: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border },

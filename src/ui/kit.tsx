@@ -1,6 +1,7 @@
 import { ReactNode } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Animated, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useFillIn, usePressScale } from './motion';
 
 // Dark "tactical" theme: near-black olive surfaces, field green lightened to read on dark.
 export const colors = {
@@ -16,10 +17,17 @@ export const colors = {
   placeholder: '#6B7366',
 };
 
-export function Screen({ children }: { children: ReactNode }) {
+/** Scrolling page. Pass onRefresh to allow pull to refresh. */
+export function Screen({ children, onRefresh }: { children: ReactNode; onRefresh?: () => void }) {
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
-      <ScrollView contentContainerStyle={styles.screen} keyboardShouldPersistTaps="handled">{children}</ScrollView>
+      <ScrollView
+        contentContainerStyle={styles.screen}
+        keyboardShouldPersistTaps="handled"
+        refreshControl={onRefresh ? <RefreshControl refreshing={false} onRefresh={onRefresh} tintColor={colors.accent} colors={[colors.accent]} progressBackgroundColor={colors.card} /> : undefined}
+      >
+        {children}
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -38,9 +46,12 @@ export function Card({ children }: { children: ReactNode }) {
 
 /** Outlined pill for a screen's main action, placed beside the title. */
 export function HeaderAction({ label, onPress }: { label: string; onPress: () => void }) {
+  const press = usePressScale();
   return (
-    <Pressable accessibilityRole="button" onPress={onPress} style={({ pressed }) => [styles.headerAction, pressed && { opacity: 0.8 }]}>
-      <Text style={styles.headerActionText}>{label}</Text>
+    <Pressable accessibilityRole="button" onPress={onPress} onPressIn={press.onPressIn} onPressOut={press.onPressOut}>
+      <Animated.View style={[styles.headerAction, { transform: [{ scale: press.scale }] }]}>
+        <Text style={styles.headerActionText}>{label}</Text>
+      </Animated.View>
     </Pressable>
   );
 }
@@ -63,34 +74,49 @@ export function Eyebrow({ children }: { children: string }) {
 /** Thin bar showing value out of max, e.g. station points out of the station's maximum. */
 export function ProgressBar({ value, max }: { value: number; max: number }) {
   const pct = Math.max(0, Math.min(1, value / max)) * 100;
+  const fill = useFillIn();
+  const width = fill.interpolate({ inputRange: [0, 1], outputRange: ['0%', `${pct}%`] });
   return (
     <View style={styles.track}>
-      <View style={[styles.fill, { width: `${pct}%` }]} />
+      <Animated.View style={[styles.fill, { width }]} />
     </View>
   );
 }
 
 export function Button({ label, onPress, secondary }: { label: string; onPress: () => void; secondary?: boolean }) {
+  const press = usePressScale();
   return (
-    <Pressable
-      accessibilityRole="button"
-      onPress={onPress}
-      style={({ pressed }) => [styles.button, secondary && styles.buttonSecondary, pressed && { opacity: 0.8 }]}
-    >
-      <Text style={[styles.buttonText, secondary && styles.buttonTextSecondary]}>{label}</Text>
+    <Pressable accessibilityRole="button" onPress={onPress} onPressIn={press.onPressIn} onPressOut={press.onPressOut}>
+      <Animated.View style={[styles.button, secondary && styles.buttonSecondary, { transform: [{ scale: press.scale }] }]}>
+        <Text style={[styles.buttonText, secondary && styles.buttonTextSecondary]}>{label}</Text>
+      </Animated.View>
     </Pressable>
   );
 }
 
 export function Chip({ label, selected, onPress }: { label: string; selected: boolean; onPress: () => void }) {
+  const press = usePressScale();
   return (
     <Pressable
       accessibilityRole="radio"
       accessibilityState={{ selected }}
       onPress={onPress}
-      style={[styles.chip, selected && styles.chipSelected]}
+      onPressIn={press.onPressIn}
+      onPressOut={press.onPressOut}
     >
-      <Text style={[styles.chipText, selected && styles.chipTextSelected]}>{label}</Text>
+      <Animated.View style={[styles.chip, selected && styles.chipSelected, { transform: [{ scale: press.scale }] }]}>
+        <Text style={[styles.chipText, selected && styles.chipTextSelected]}>{label}</Text>
+      </Animated.View>
+    </Pressable>
+  );
+}
+
+/** A tappable settings-style row: label on the left, chevron on the right. */
+export function ListRow({ label, onPress, first }: { label: string; onPress: () => void; first?: boolean }) {
+  return (
+    <Pressable accessibilityRole="link" onPress={onPress} style={({ pressed }) => [styles.listRow, !first && styles.listDivider, pressed && { opacity: 0.7 }]}>
+      <Text style={styles.listLabel}>{label}</Text>
+      <Text style={styles.chevron}>›</Text>
     </Pressable>
   );
 }
@@ -130,6 +156,10 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bg },
   screen: { padding: 16, gap: 12 },
   title: { fontSize: 24, fontWeight: '600', color: colors.text },
+  listRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 14, minHeight: 48 },
+  listDivider: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border },
+  listLabel: { fontSize: 16, color: colors.text },
+  chevron: { fontSize: 22, color: colors.muted },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', minHeight: 44 },
   headerAction: { borderWidth: 1, borderColor: colors.accent, borderRadius: 999, paddingVertical: 8, paddingHorizontal: 14, minHeight: 44, justifyContent: 'center' },
   headerActionText: { color: colors.accent, fontSize: 15, fontWeight: '600' },

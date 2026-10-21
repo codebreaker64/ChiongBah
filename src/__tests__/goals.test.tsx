@@ -61,3 +61,12 @@ test('no official table yet', async () => {
   await goals({ sessions: ALL, goal: { kind: 'award', award: 'silver' }, table: null });
   expect(await screen.findByText('Scoring tables not added yet.')).toBeTruthy();
 });
+
+test('what if shows the total for a better result', async () => {
+  await goals({ sessions: ALL, goal: { kind: 'award', award: 'gold' } });
+  expect(await screen.findByText('WHAT IF')).toBeTruthy();
+  for (let i = 0; i < 5; i++) await fireEvent.press(screen.getByLabelText('More reps'));
+  expect(screen.getByText('+5 reps')).toBeTruthy();
+  expect(screen.getByText('50 reps')).toBeTruthy();
+  expect(screen.getByText(/^Total \d+\/100 · /)).toBeTruthy();
+});

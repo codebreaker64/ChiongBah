@@ -1,9 +1,11 @@
+import { Emblem } from '@/ui/Emblem';
 import { Body, Button, Card, Screen, Title } from '@/ui/kit';
 import { router } from 'expo-router';
 
 export default function Disclaimer() {
   return (
     <Screen>
+      <Emblem size={200} symbol={{ ios: 'scope', android: 'target', web: 'target' }} />
       <Title>Chiong Bah</Title>
       <Body>Train for your IPPT and count down to the dates that matter.</Body>
       <Card>

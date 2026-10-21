@@ -1,7 +1,8 @@
 import { useRepositories } from '@/app-state/RepositoriesContext';
 import { useAppData } from '@/app-state/useAppData';
-import { Body, Screen, Title } from '@/ui/kit';
+import { Body, Card, Eyebrow, ListRow, Screen, Title } from '@/ui/kit';
 import { ProfileForm } from '@/ui/ProfileForm';
+import { router } from 'expo-router';
 import { useState } from 'react';
 
 export default function Settings() {
@@ -24,6 +25,12 @@ export default function Settings() {
         }}
       />
       {saved ? <Body muted>Saved</Body> : null}
+      <Eyebrow>Support</Eyebrow>
+      <Card>
+        <ListRow first label="Help & Support" onPress={() => router.push('/help')} />
+        <ListRow label="Terms of Service" onPress={() => router.push('/terms')} />
+        <ListRow label="Privacy Policy" onPress={() => router.push('/privacy')} />
+      </Card>
       <Body muted>Not affiliated with MINDEF/SAF/SPF/SCDF; scores are practice estimates.</Body>
     </Screen>
   );

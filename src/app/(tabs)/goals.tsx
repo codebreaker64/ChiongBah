@@ -4,14 +4,15 @@ import { useAppData } from '@/app-state/useAppData';
 import { countdownTo } from '@/domain/countdowns/countdowns';
 import { GoalTarget, goalProgress, StationGap } from '@/domain/goals/goals';
 import { scoringAge } from '@/domain/profile';
-import { Award, awardRules } from '@/domain/scoring/awards';
-import { MAX_POINTS } from '@/domain/scoring/table';
+import { Award, awardRules, scoreIppt, StationResults } from '@/domain/scoring/awards';
+import { MAX_POINTS, ScoringTable, Station, STATIONS } from '@/domain/scoring/table';
+import type { Profile } from '@/domain/profile';
 import { currentTable } from '@/domain/scoring/tables';
 import { Body, Button, Card, Chip, ChipRow, colors, Eyebrow, Field, ProgressBar, Screen, Title } from '@/ui/kit';
 import { AWARD_LABEL, formatResult, plural, STATION_LABEL } from '@/ui/labels';
 import { PracticeEstimateLabel } from '@/ui/PracticeEstimateLabel';
 import { useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 const AWARDS: Exclude<Award, 'fail'>[] = ['pass', 'pass_incentive', 'silver', 'gold'];
 
@@ -35,6 +36,45 @@ function StationRow({ gap, cheapest }: { gap: StationGap; cheapest: boolean }) {
         </Body>
       ))}
     </View>
+  );
+}
+
+const STEP: Record<Station, number> = { pushup: 1, situp: 1, run: 5 };
+
+/** Try a better result on one station and see the total and award it would give. */
+function WhatIf({ latest, age, table, profile }: { latest: StationResults; age: number; table: ScoringTable; profile: Profile }) {
+  const [station, setStation] = useState<Station>('pushup');
+  const [delta, setDelta] = useState(0);
+  const base = latest[station];
+  if (base === null) return null;
+  const isRun = station === 'run';
+  const value = isRun ? Math.max(420, base - delta) : Math.min(100, base + delta);
+  const result = scoreIppt({ ...latest, [station]: value }, age, table, profile, awardRules);
+  if ('error' in result || result.total === null || !result.award) return null;
+  const change = isRun ? `−${delta} s` : `+${delta} reps`;
+  const step = (dir: 1 | -1) => setDelta((d) => Math.max(0, d + dir * STEP[station]));
+  return (
+    <Card>
+      <Eyebrow>What if</Eyebrow>
+      <ChipRow>
+        {STATIONS.map((s) => (
+          <Chip key={s} label={STATION_LABEL[s]} selected={station === s} onPress={() => { setStation(s); setDelta(0); }} />
+        ))}
+      </ChipRow>
+      <View style={styles.stepper}>
+        <Pressable accessibilityRole="button" accessibilityLabel={isRun ? 'Slower' : 'Fewer reps'} onPress={() => step(-1)} style={styles.stepButton}>
+          <Text style={styles.stepText}>−</Text>
+        </Pressable>
+        <View style={styles.stepValue}>
+          <Text style={styles.stepMain}>{formatResult(station, value)}</Text>
+          <Body muted>{delta === 0 ? 'Your latest' : change}</Body>
+        </View>
+        <Pressable accessibilityRole="button" accessibilityLabel={isRun ? 'Faster' : 'More reps'} onPress={() => step(1)} style={styles.stepButton}>
+          <Text style={styles.stepText}>+</Text>
+        </Pressable>
+      </View>
+      <Text style={styles.whatIfResult}>{`Total ${result.total}/100 · ${AWARD_LABEL[result.award]}`}</Text>
+    </Card>
   );
 }
 
@@ -110,6 +150,7 @@ export default function Goals() {
             </View>
             <PracticeEstimateLabel />
           </Card>
+          {currentTable ? <WhatIf latest={latest} age={scoringAge(profile, today)} table={currentTable} profile={profile} /> : null}
           <Eyebrow>By station</Eyebrow>
           <Card>
             {progress.stations.map((gap) => (
@@ -132,4 +173,10 @@ const styles = StyleSheet.create({
   gapNumber: { fontSize: 64, fontWeight: '700', color: colors.text, fontVariant: ['tabular-nums'], lineHeight: 72 },
   gapCaption: { fontSize: 18, fontWeight: '600', color: colors.muted },
   facts: { gap: 2 },
+  stepper: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 4 },
+  stepButton: { width: 48, height: 48, borderRadius: 24, borderWidth: 1, borderColor: colors.accent, alignItems: 'center', justifyContent: 'center' },
+  stepText: { fontSize: 24, color: colors.accent, fontWeight: '600' },
+  stepValue: { alignItems: 'center' },
+  stepMain: { fontSize: 28, fontWeight: '700', color: colors.text, fontVariant: ['tabular-nums'] },
+  whatIfResult: { fontSize: 18, fontWeight: '600', color: colors.accent, textAlign: 'center' },
 });

@@ -60,3 +60,10 @@ test('validateProfileForm refuses a future date of birth and an age outside the 
   expect(validateProfileForm({ ...base, dob: '1965-01-01' }, '2026-10-21').dob).toBe("We can't score your age group yet.");
   expect(validateProfileForm({ ...base, dob: '2005-03-01' }, '2026-10-21')).toEqual({});
 });
+
+test('settings links to help, terms and privacy', async () => {
+  setupTestApp({ now: NOW, profile: P });
+  await renderRouter(APP, { initialUrl: '/settings' });
+  await fireEvent.press(await screen.findByText('Privacy Policy'));
+  expect(await screen.findByText('What the app stores')).toBeTruthy();
+});

@@ -7,9 +7,15 @@ import { MAX_POINTS, STATIONS } from '@/domain/scoring/table';
 import { currentTable } from '@/domain/scoring/tables';
 import { Body, Button, Card, colors, Eyebrow, Header, HeaderAction, ProgressBar, Screen } from '@/ui/kit';
 import { AWARD_LABEL, formatResult, joinWithAnd, plural, STATION_LABEL, STATION_NOUN } from '@/ui/labels';
+import { useCountUp } from '@/ui/motion';
 import { PracticeEstimateLabel } from '@/ui/PracticeEstimateLabel';
 import { router } from 'expo-router';
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+
+/** A number that counts up to its value when it first appears. */
+function CountUp({ value, style }: { value: number; style: object }) {
+  return <Text style={style}>{String(useCountUp(value))}</Text>;
+}
 
 function Big({ children }: { children: string }) {
   return <Text style={styles.big}>{children}</Text>;
@@ -20,7 +26,7 @@ function CountdownTile({ days, label }: { days: number; label: string }) {
   const caption = `${days === 1 ? 'day' : 'days'} to ${label}`;
   return (
     <View style={styles.tile} accessible accessibilityLabel={`${plural(days, 'day')} to ${label}`}>
-      <Text style={styles.tileNumber}>{String(days)}</Text>
+      <CountUp value={days} style={styles.tileNumber} />
       <Text style={styles.tileCaption}>{caption}</Text>
     </View>
   );
@@ -45,14 +51,14 @@ export default function Home() {
   if (ordRod && ordCountdown?.kind === 'upcoming') upcoming.push({ days: ordCountdown.days, label: ordRod.label });
 
   return (
-    <Screen>
+    <Screen onRefresh={refresh}>
       <Header title="Chiong Bah" action={<HeaderAction label="+ Add result" onPress={() => router.push('/log/new')} />} />
 
       <Card>
         <Eyebrow>IPPT score</Eyebrow>
         <View style={styles.scoreRow}>
           <View style={styles.scoreValue} accessible accessibilityLabel={total !== null ? `Total ${total}/100` : 'No total yet'}>
-            <Text style={styles.scoreNumber}>{total !== null ? String(total) : '—'}</Text>
+            {total !== null ? <CountUp value={total} style={styles.scoreNumber} /> : <Text style={styles.scoreNumber}>—</Text>}
             <Text style={styles.scoreMax}>/100</Text>
           </View>
           {total !== null && scored?.award ? <Text style={styles.award}>{AWARD_LABEL[scored.award]}</Text> : null}
@@ -69,7 +75,13 @@ export default function Home() {
             const value = latest[s];
             const points = scored ? scored.points[s] : null;
             return (
-              <View key={s} style={styles.station}>
+              <Pressable
+                key={s}
+                accessibilityRole="button"
+                accessibilityHint="Opens Goals"
+                onPress={() => router.push('/goals')}
+                style={({ pressed }) => [styles.station, pressed && { opacity: 0.7 }]}
+              >
                 <View style={styles.stationRow}>
                   <Body>{STATION_LABEL[s]}</Body>
                   <View style={styles.stationValues}>
@@ -78,7 +90,7 @@ export default function Home() {
                   </View>
                 </View>
                 {points !== null ? <ProgressBar value={points} max={MAX_POINTS[s]} /> : null}
-              </View>
+              </Pressable>
             );
           })}
         </View>
