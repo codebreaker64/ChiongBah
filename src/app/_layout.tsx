@@ -22,6 +22,7 @@ export default function RootLayout() {
         <Stack.Screen name="onboarding/index" />
         <Stack.Screen name="onboarding/profile" />
         <Stack.Screen name="log/new" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="log/import" options={{ presentation: 'modal' }} />
         <Stack.Screen name="help" options={{ ...docHeader, title: 'Help & Support' }} />
         <Stack.Screen name="terms" options={{ ...docHeader, title: 'Terms of Service' }} />
         <Stack.Screen name="privacy" options={{ ...docHeader, title: 'Privacy Policy' }} />

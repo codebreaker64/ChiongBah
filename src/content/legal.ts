@@ -6,7 +6,7 @@ export type DocSection = { heading: string; body: string[] };
 export const LAST_UPDATED = '21 Oct 2026';
 
 /** Set to a real address to show the "Email us" row on Help & Support. */
-export const SUPPORT_EMAIL = '';
+export const SUPPORT_EMAIL = 'kaijiefong.work@gmail.com';
 
 export const HELP: DocSection[] = [
   {

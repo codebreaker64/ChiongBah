@@ -9,7 +9,7 @@ export const SOURCE_LABEL: Record<SessionSource, string> = {
   manual: 'Manual',
   camera_test: 'Camera test',
   camera_practice: 'Camera practice',
-  health_connect: 'Imported',
+  health_connect: 'Health Connect',
 };
 
 /** Reps or run time as shown to the user: '30 reps', '9:45'. */

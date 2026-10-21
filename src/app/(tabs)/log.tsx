@@ -1,7 +1,7 @@
 import type { Session } from '@/adapters/storage/repositories';
 import { useRepositories } from '@/app-state/RepositoriesContext';
 import { useAppData } from '@/app-state/useAppData';
-import { Body, colors, Eyebrow, Header, HeaderAction, Screen } from '@/ui/kit';
+import { Body, Card, colors, Eyebrow, Header, HeaderAction, ListRow, Screen } from '@/ui/kit';
 import { SOURCE_LABEL, sessionDate, sessionValue, STATION_LABEL } from '@/ui/labels';
 import { Emblem } from '@/ui/Emblem';
 import { router } from 'expo-router';
@@ -28,6 +28,9 @@ export default function Log() {
   return (
     <Screen onRefresh={refresh}>
       <Header title="Log" action={<HeaderAction label="+ Add result" onPress={() => router.push('/log/new')} />} />
+      <Card>
+        <ListRow first label="Import runs from Health Connect" onPress={() => router.push('/log/import')} />
+      </Card>
       {sessions.length === 0 ? (
         <View style={styles.empty}>
           <Emblem symbol={{ ios: 'figure.strengthtraining.traditional', android: 'fitness_center', web: 'fitness_center' }} />

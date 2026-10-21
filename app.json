@@ -18,7 +18,11 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.kaijiefong.chiongbah"
+      "package": "com.kaijiefong.chiongbah",
+      "permissions": [
+        "android.permission.health.READ_EXERCISE",
+        "android.permission.health.READ_DISTANCE"
+      ]
     },
     "web": {
       "output": "server",
@@ -42,7 +46,8 @@
           }
         }
       ],
-      "expo-sqlite"
+      "expo-sqlite",
+      "react-native-health-connect"
     ],
     "experiments": {
       "typedRoutes": true,

@@ -93,6 +93,11 @@ export function sessionRepo(db: Db) {
     remove(id: number): void {
       db.run('DELETE FROM sessions WHERE id = ?', [id]);
     },
+    /** External IDs of sessions already imported from `source`, so the same run isn't imported twice. */
+    importedIds(source: SessionSource): Set<string> {
+      const rows = db.all<{ external_id: string }>('SELECT external_id FROM sessions WHERE source = ? AND external_id IS NOT NULL', [source]);
+      return new Set(rows.map((r) => r.external_id));
+    },
     latestResults(): StationResults {
       const placeholders = RESULT_SOURCES.map(() => '?').join(', ');
       const latest = (station: Station) => db.get<SessionRow>(
