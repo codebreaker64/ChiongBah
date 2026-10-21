@@ -8,7 +8,9 @@ import { Award, awardRules, scoreIppt, StationResults } from '@/domain/scoring/a
 import { MAX_POINTS, ScoringTable, Station, STATIONS } from '@/domain/scoring/table';
 import type { Profile } from '@/domain/profile';
 import { currentTable } from '@/domain/scoring/tables';
-import { Body, Button, Card, Chip, ChipRow, colors, Eyebrow, Field, ProgressBar, Screen, Title } from '@/ui/kit';
+import { Body, Button, Card, Chip, ChipRow, colors, Field, fonts, ListRow, ProgressBar, Screen, SectionTitle, Title } from '@/ui/kit';
+import { router } from 'expo-router';
+import { SymbolView } from 'expo-symbols';
 import { AWARD_LABEL, formatResult, plural, STATION_LABEL } from '@/ui/labels';
 import { PracticeEstimateLabel } from '@/ui/PracticeEstimateLabel';
 import { useState } from 'react';
@@ -55,7 +57,7 @@ function WhatIf({ latest, age, table, profile }: { latest: StationResults; age: 
   const step = (dir: 1 | -1) => setDelta((d) => Math.max(0, d + dir * STEP[station]));
   return (
     <Card>
-      <Eyebrow>What if</Eyebrow>
+      <Text style={styles.cardTitle}>What if</Text>
       <ChipRow>
         {STATIONS.map((s) => (
           <Chip key={s} label={STATION_LABEL[s]} selected={station === s} onPress={() => { setStation(s); setDelta(0); }} />
@@ -63,14 +65,14 @@ function WhatIf({ latest, age, table, profile }: { latest: StationResults; age: 
       </ChipRow>
       <View style={styles.stepper}>
         <Pressable accessibilityRole="button" accessibilityLabel={isRun ? 'Slower' : 'Fewer reps'} onPress={() => step(-1)} style={styles.stepButton}>
-          <Text style={styles.stepText}>−</Text>
+          <SymbolView name={{ ios: 'minus', android: 'remove', web: 'remove' }} tintColor={colors.accent} size={22} />
         </Pressable>
         <View style={styles.stepValue}>
           <Text style={styles.stepMain}>{formatResult(station, value)}</Text>
           <Body muted>{delta === 0 ? 'Your latest' : change}</Body>
         </View>
         <Pressable accessibilityRole="button" accessibilityLabel={isRun ? 'Faster' : 'More reps'} onPress={() => step(1)} style={styles.stepButton}>
-          <Text style={styles.stepText}>+</Text>
+          <SymbolView name={{ ios: 'plus', android: 'add', web: 'add' }} tintColor={colors.accent} size={22} />
         </Pressable>
       </View>
       <Text style={styles.whatIfResult}>{`Total ${result.total}/100 · ${AWARD_LABEL[result.award]}`}</Text>
@@ -108,6 +110,9 @@ export default function Goals() {
   return (
     <Screen>
       <Title>Goals</Title>
+      <Card>
+        <ListRow first label="Score tables by age" onPress={() => router.push('/tables')} />
+      </Card>
       <ChipRow>
         {AWARDS.map((a) => (
           <Chip key={a} label={AWARD_LABEL[a]} selected={!customOpen && goal?.kind === 'award' && goal.award === a}
@@ -129,7 +134,7 @@ export default function Goals() {
       {progress && !('error' in progress) ? (
         <>
           <Card>
-            <Eyebrow>Your gap</Eyebrow>
+            <Text style={styles.cardTitle}>Your gap</Text>
             {progress.total === null ? <Text style={styles.status}>Log all three stations to see your gap.</Text>
               : progress.met ? <Text style={styles.status}>Target met</Text>
               : progress.pointsNeeded === 0 ? <Text style={styles.status}>Every station needs at least 1 point.</Text>
@@ -151,7 +156,7 @@ export default function Goals() {
             <PracticeEstimateLabel />
           </Card>
           {currentTable ? <WhatIf latest={latest} age={scoringAge(profile, today)} table={currentTable} profile={profile} /> : null}
-          <Eyebrow>By station</Eyebrow>
+          <SectionTitle>By station</SectionTitle>
           <Card>
             {progress.stations.map((gap) => (
               <StationRow key={gap.station} gap={gap} cheapest={progress.cheapest[0] === gap.station} />
@@ -168,15 +173,15 @@ const styles = StyleSheet.create({
   stationHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   stationName: { fontSize: 16, fontWeight: '600', color: colors.text },
   tag: { color: colors.accent, fontWeight: '600', fontSize: 13 },
-  status: { fontSize: 22, fontWeight: '600', color: colors.text },
+  status: { fontSize: 26, fontFamily: fonts.displaySemi, color: colors.text },
+  cardTitle: { fontSize: 16, fontWeight: '600', color: colors.muted },
   gapRow: { flexDirection: 'row', alignItems: 'baseline', gap: 8 },
-  gapNumber: { fontSize: 64, fontWeight: '700', color: colors.text, fontVariant: ['tabular-nums'], lineHeight: 72 },
-  gapCaption: { fontSize: 18, fontWeight: '600', color: colors.muted },
+  gapNumber: { fontSize: 88, fontFamily: fonts.display, color: colors.text, fontVariant: ['tabular-nums'], lineHeight: 92 },
+  gapCaption: { fontSize: 24, fontFamily: fonts.displaySemi, color: colors.muted },
   facts: { gap: 2 },
   stepper: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 4 },
   stepButton: { width: 48, height: 48, borderRadius: 24, borderWidth: 1, borderColor: colors.accent, alignItems: 'center', justifyContent: 'center' },
-  stepText: { fontSize: 24, color: colors.accent, fontWeight: '600' },
   stepValue: { alignItems: 'center' },
-  stepMain: { fontSize: 28, fontWeight: '700', color: colors.text, fontVariant: ['tabular-nums'] },
-  whatIfResult: { fontSize: 18, fontWeight: '600', color: colors.accent, textAlign: 'center' },
+  stepMain: { fontSize: 36, fontFamily: fonts.display, color: colors.text, fontVariant: ['tabular-nums'] },
+  whatIfResult: { fontSize: 24, fontFamily: fonts.displaySemi, color: colors.accent, textAlign: 'center' },
 });

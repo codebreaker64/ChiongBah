@@ -42,8 +42,8 @@ test('log lists results newest first with source and date', async () => {
   await renderRouter(APP, { initialUrl: '/log' });
   const values = (await screen.findAllByTestId('session-value')).map((n) => n.props.children);
   expect(values).toEqual(['11:00', '30 reps']);
-  expect(screen.getByText('10 OCT 2026')).toBeTruthy();
-  expect(screen.getByText('1 OCT 2026')).toBeTruthy();
+  expect(screen.getByText('10 Oct 2026')).toBeTruthy();
+  expect(screen.getByText('1 Oct 2026')).toBeTruthy();
   expect(screen.getAllByText('Manual')).toHaveLength(2);
 });
 

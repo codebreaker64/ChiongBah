@@ -6,6 +6,7 @@ import { currentTable } from '@/domain/scoring/tables';
 import { useState } from 'react';
 import { Switch, Text, View } from 'react-native';
 import { Body, Button, Chip, ChipRow, colors, Field } from './kit';
+import { STATUS_LABEL } from './labels';
 
 /** Dates as typed text, '' when blank. */
 export type ProfileFormValues = {
@@ -44,18 +45,18 @@ export function validateProfileForm(v: ProfileFormValues, today: LocalDate): Rec
   return errors;
 }
 
-function toProfile(v: ProfileFormValues): Profile {
+export function toProfile(v: ProfileFormValues): Profile {
   return {
     dob: v.dob.trim(),
     status: v.status,
     service: v.service,
-    eliteVocation: v.eliteVocation,
+    eliteVocation: v.service === 'saf' && v.eliteVocation,
     ordRodDate: v.status === 'nsf' ? v.ordRodDate.trim() : null,
     ipptDate: v.ipptDate.trim() === '' ? null : v.ipptDate.trim(),
   };
 }
 
-function toValues(p?: Profile): ProfileFormValues {
+export function toValues(p?: Profile): ProfileFormValues {
   return {
     dob: p?.dob ?? '',
     status: p?.status ?? 'nsf',
@@ -85,8 +86,8 @@ export function ProfileForm(props: { initial?: Profile; submitLabel: string; tod
       <View style={{ gap: 6 }}>
         <Body muted>I am</Body>
         <ChipRow>
-          <Chip label="NSF" selected={v.status === 'nsf'} onPress={() => set('status', 'nsf')} />
-          <Chip label="NSman" selected={v.status === 'nsman'} onPress={() => set('status', 'nsman')} />
+          <Chip label={STATUS_LABEL.nsf} selected={v.status === 'nsf'} onPress={() => set('status', 'nsf')} />
+          <Chip label={STATUS_LABEL.nsman} selected={v.status === 'nsman'} onPress={() => set('status', 'nsman')} />
         </ChipRow>
       </View>
 
@@ -99,6 +100,7 @@ export function ProfileForm(props: { initial?: Profile; submitLabel: string; tod
         </ChipRow>
       </View>
 
+      {v.service === 'saf' ? (
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
         <Text style={{ fontSize: 16, color: colors.text, flex: 1 }}>Commando, Diver or Guards</Text>
         <Switch
@@ -109,6 +111,7 @@ export function ProfileForm(props: { initial?: Profile; submitLabel: string; tod
           thumbColor={colors.text}
         />
       </View>
+      ) : null}
 
       {v.status === 'nsf' ? (
         <Field label={`${label} date`} value={v.ordRodDate} onChangeText={(t) => set('ordRodDate', t)} error={errors.ordRodDate} placeholder="YYYY-MM-DD" keyboardType="numbers-and-punctuation" />

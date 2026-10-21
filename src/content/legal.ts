@@ -82,7 +82,7 @@ export const PRIVACY: DocSection[] = [
   {
     heading: 'What the app stores',
     body: [
-      'Your profile: date of birth, NSF or NSman status, service, vocation, and your ORD/ROD and IPPT dates.',
+      'Your profile: date of birth, NSF or reservist status, service, vocation, and your ORD/ROD and IPPT dates.',
       'Your results and your goal.',
       'This is stored in a database on your device and is used only to calculate your countdowns, scores and goals.',
     ],

@@ -33,7 +33,7 @@ test('NSman sees no ORD card', async () => {
 test('ORD passed offers switch to NSman', async () => {
   const repos = await home({ profile: { ...P, ordRodDate: '2026-10-01' } });
   expect(await screen.findByText('Congratulations on your ORD!')).toBeTruthy();
-  await fireEvent.press(screen.getByText('Switch to NSman'));
+  await fireEvent.press(screen.getByText('Switch to reservist'));
   expect(repos.profile.get()).toMatchObject({ status: 'nsman', ordRodDate: null });
   expect(screen.queryByText('Congratulations on your ORD!')).toBeNull();
 });
@@ -75,8 +75,8 @@ test('full results show total, award and practice label', async () => {
 
 test('header action opens the add result form', async () => {
   await home({ profile: P });
-  await fireEvent.press(await screen.findByText('+ Add result'));
-  expect(await screen.findByText('Add result')).toBeTruthy();
+  await fireEvent.press(await screen.findByText('Add result'));
+  expect(await screen.findByLabelText('Reps')).toBeTruthy();
 });
 
 test('no official table yet', async () => {

@@ -5,7 +5,7 @@ import { scoringAge } from '@/domain/profile';
 import { awardRules, scoreIppt } from '@/domain/scoring/awards';
 import { MAX_POINTS, STATIONS } from '@/domain/scoring/table';
 import { currentTable } from '@/domain/scoring/tables';
-import { Body, Button, Card, colors, Eyebrow, Header, HeaderAction, ProgressBar, Screen } from '@/ui/kit';
+import { Body, Button, Card, colors, fonts, Header, HeaderAction, ProgressBar, Screen } from '@/ui/kit';
 import { AWARD_LABEL, formatResult, joinWithAnd, plural, STATION_LABEL, STATION_NOUN } from '@/ui/labels';
 import { useCountUp } from '@/ui/motion';
 import { PracticeEstimateLabel } from '@/ui/PracticeEstimateLabel';
@@ -52,10 +52,10 @@ export default function Home() {
 
   return (
     <Screen onRefresh={refresh}>
-      <Header title="Chiong Bah" action={<HeaderAction label="+ Add result" onPress={() => router.push('/log/new')} />} />
+      <Header title="Chiong Bah" action={<HeaderAction label="Add result" onPress={() => router.push('/log/new')} />} />
 
       <Card>
-        <Eyebrow>IPPT score</Eyebrow>
+        <Text style={styles.cardTitle}>IPPT score</Text>
         <View style={styles.scoreRow}>
           <View style={styles.scoreValue} accessible accessibilityLabel={total !== null ? `Total ${total}/100` : 'No total yet'}>
             {total !== null ? <CountUp value={total} style={styles.scoreNumber} /> : <Text style={styles.scoreNumber}>—</Text>}
@@ -124,7 +124,7 @@ export default function Home() {
             <>
               <Big>{`Congratulations on your ${ordRod.label}!`}</Big>
               <Button
-                label="Switch to NSman"
+                label="Switch to reservist"
                 onPress={() => {
                   repos.profile.save({ ...profile, status: 'nsman', ordRodDate: null });
                   refresh();
@@ -139,18 +139,19 @@ export default function Home() {
 }
 
 const styles = StyleSheet.create({
-  big: { fontSize: 22, fontWeight: '600', color: colors.text },
+  big: { fontSize: 26, fontFamily: fonts.displaySemi, color: colors.text },
+  cardTitle: { fontSize: 16, fontWeight: '600', color: colors.muted },
   scoreRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' },
   scoreValue: { flexDirection: 'row', alignItems: 'baseline', gap: 4 },
-  scoreNumber: { fontSize: 64, fontWeight: '700', color: colors.text, fontVariant: ['tabular-nums'], lineHeight: 72 },
-  scoreMax: { fontSize: 22, fontWeight: '600', color: colors.muted },
-  award: { fontSize: 18, fontWeight: '600', color: colors.accent, marginBottom: 12 },
+  scoreNumber: { fontSize: 88, fontFamily: fonts.display, color: colors.text, fontVariant: ['tabular-nums'], lineHeight: 92 },
+  scoreMax: { fontSize: 28, fontFamily: fonts.displaySemi, color: colors.muted },
+  award: { fontSize: 26, fontFamily: fonts.displaySemi, color: colors.accent, marginBottom: 14 },
   stations: { gap: 14, marginTop: 8, paddingTop: 16, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border },
   station: { gap: 6 },
   stationRow: { flexDirection: 'row', justifyContent: 'space-between' },
   stationValues: { flexDirection: 'row', gap: 12 },
   tiles: { flexDirection: 'row', gap: 12 },
   tile: { flex: 1, backgroundColor: colors.card, borderRadius: 12, padding: 16, gap: 2, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border },
-  tileNumber: { fontSize: 40, fontWeight: '700', color: colors.text, fontVariant: ['tabular-nums'] },
+  tileNumber: { fontSize: 52, fontFamily: fonts.display, color: colors.text, fontVariant: ['tabular-nums'], lineHeight: 56 },
   tileCaption: { fontSize: 14, color: colors.muted },
 });

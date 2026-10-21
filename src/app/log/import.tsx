@@ -5,7 +5,7 @@ import { formatLocalDate, todayInSingapore } from '@/domain/dates';
 import { formatRunTime } from '@/domain/entries/validate';
 import { RunCandidate, runCandidates } from '@/domain/imports/runs';
 import { Emblem } from '@/ui/Emblem';
-import { Body, Button, Card, colors, Screen, Title } from '@/ui/kit';
+import { Body, Button, Card, colors, fonts, Screen, Title } from '@/ui/kit';
 import { router } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
@@ -132,6 +132,6 @@ const styles = StyleSheet.create({
   text: { gap: 2 },
   date: { fontSize: 16, fontWeight: '600', color: colors.text },
   result: { alignItems: 'flex-end' },
-  time: { fontSize: 24, fontWeight: '700', color: colors.accent, fontVariant: ['tabular-nums'] },
+  time: { fontSize: 30, fontFamily: fonts.display, color: colors.accent, fontVariant: ['tabular-nums'] },
   done: { color: colors.accent, fontSize: 15, fontWeight: '600' },
 });

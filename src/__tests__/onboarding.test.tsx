@@ -18,24 +18,60 @@ test('first launch shows both disclaimers, then the profile form', async () => {
   expect(await screen.findByLabelText('Date of birth')).toBeTruthy();
 });
 
-test('profile form rejects an impossible date and a missing ROD date', async () => {
+test('onboarding rejects an impossible date, then a missing ROD date', async () => {
   setupTestApp({ now: NOW });
   await renderRouter(APP, { initialUrl: '/onboarding/profile' });
   await fireEvent.changeText(await screen.findByLabelText('Date of birth'), '2005-02-30');
-  await fireEvent.press(screen.getByText('SPF'));
-  await fireEvent.press(screen.getByText('Save'));
+  await fireEvent.press(screen.getByText('Continue'));
   expect(await screen.findByText('Enter a real date as YYYY-MM-DD.')).toBeTruthy();
-  expect(screen.getByText('Enter your ROD date.')).toBeTruthy();
+  await fireEvent.changeText(screen.getByLabelText('Date of birth'), '2005-03-01');
+  await fireEvent.press(screen.getByText('Continue'));
+  await fireEvent.press(await screen.findByText('Continue')); // NSF
+  await fireEvent.press(await screen.findByText('SPF'));
+  await fireEvent.press(screen.getByText('Continue'));
+  await fireEvent.press(await screen.findByText('Continue')); // ROD date left blank
+  expect(await screen.findByText('Enter your ROD date.')).toBeTruthy();
 });
 
-test('saving the first profile stores it and opens Home', async () => {
+test('onboarding walks through each question and saves the profile and goal', async () => {
   const repos = setupTestApp({ now: NOW });
   await renderRouter(APP, { initialUrl: '/onboarding/profile' });
   await fireEvent.changeText(await screen.findByLabelText('Date of birth'), '2005-03-01');
-  await fireEvent.changeText(screen.getByLabelText('ORD date'), '2026-12-01');
-  await fireEvent.press(screen.getByText('Save'));
+  expect(screen.getByText("You're 21.")).toBeTruthy();
+  await fireEvent.press(screen.getByText('Continue'));
+  expect(await screen.findByText('Which describes you?')).toBeTruthy();
+  await fireEvent.press(screen.getByText('Continue'));
+  expect(await screen.findByText('Which service?')).toBeTruthy();
+  await fireEvent.press(screen.getByText('Continue'));
+  expect(await screen.findByText('Commando, Diver or Guards?')).toBeTruthy();
+  await fireEvent.press(screen.getByText('Continue'));
+  await fireEvent.changeText(await screen.findByLabelText('ORD date'), '2026-12-01');
+  await fireEvent.press(screen.getByText('Continue'));
+  expect(await screen.findByText('When is your next IPPT?')).toBeTruthy();
+  await fireEvent.press(screen.getByText('Continue'));
+  await fireEvent.press(await screen.findByText('Gold'));
+  await fireEvent.press(screen.getByText('Start training'));
   expect(await screen.findByText('Home')).toBeTruthy();
   expect(repos.profile.get()).toEqual(P);
+  expect(repos.goal.get()).toEqual({ kind: 'award', award: 'gold' });
+});
+
+test('SPF reservists skip the vocation and ROD questions', async () => {
+  const repos = setupTestApp({ now: NOW });
+  await renderRouter(APP, { initialUrl: '/onboarding/profile' });
+  await fireEvent.changeText(await screen.findByLabelText('Date of birth'), '2003-03-01');
+  await fireEvent.press(screen.getByText('Continue'));
+  await fireEvent.press(await screen.findByText('Reservist'));
+  await fireEvent.press(screen.getByText('Continue'));
+  await fireEvent.press(await screen.findByText('SPF'));
+  await fireEvent.press(screen.getByText('Continue'));
+  expect(await screen.findByText('When is your next IPPT?')).toBeTruthy();
+  expect(screen.getByText('4 of 5')).toBeTruthy();
+  await fireEvent.press(screen.getByText('Continue'));
+  await fireEvent.press(await screen.findByText('Decide later'));
+  expect(await screen.findByText('Home')).toBeTruthy();
+  expect(repos.profile.get()).toMatchObject({ status: 'nsman', service: 'spf', eliteVocation: false, ordRodDate: null });
+  expect(repos.goal.get()).toBeNull();
 });
 
 test('a saved profile skips onboarding', async () => {

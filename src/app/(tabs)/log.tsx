@@ -1,7 +1,7 @@
 import type { Session } from '@/adapters/storage/repositories';
 import { useRepositories } from '@/app-state/RepositoriesContext';
 import { useAppData } from '@/app-state/useAppData';
-import { Body, Card, colors, Eyebrow, Header, HeaderAction, ListRow, Screen } from '@/ui/kit';
+import { Body, Card, colors, fonts, Header, HeaderAction, ListRow, Screen, SectionTitle } from '@/ui/kit';
 import { SOURCE_LABEL, sessionDate, sessionValue, STATION_LABEL } from '@/ui/labels';
 import { Emblem } from '@/ui/Emblem';
 import { router } from 'expo-router';
@@ -27,7 +27,7 @@ export default function Log() {
 
   return (
     <Screen onRefresh={refresh}>
-      <Header title="Log" action={<HeaderAction label="+ Add result" onPress={() => router.push('/log/new')} />} />
+      <Header title="Log" action={<HeaderAction label="Add result" onPress={() => router.push('/log/new')} />} />
       <Card>
         <ListRow first label="Import runs from Health Connect" onPress={() => router.push('/log/import')} />
       </Card>
@@ -39,7 +39,7 @@ export default function Log() {
       ) : null}
       {byDay(sessions).map((group) => (
         <View key={group.day} style={styles.group}>
-          <Eyebrow>{group.day}</Eyebrow>
+          <SectionTitle>{group.day}</SectionTitle>
           <View style={styles.card}>
             {group.sessions.map((s, i) => (
               <View key={s.id} style={[styles.row, i > 0 && styles.divider]}>
@@ -75,7 +75,7 @@ export default function Log() {
 }
 
 const styles = StyleSheet.create({
-  group: { gap: 8, marginTop: 4 },
+  group: { gap: 8 },
   empty: { alignItems: 'center', gap: 20, paddingVertical: 40 },
   card: { backgroundColor: colors.card, borderRadius: 12, paddingHorizontal: 16, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border },
   row: { paddingVertical: 14, gap: 8 },
@@ -83,7 +83,7 @@ const styles = StyleSheet.create({
   rowTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   rowText: { gap: 2 },
   station: { fontSize: 16, fontWeight: '600', color: colors.text },
-  value: { fontSize: 24, fontWeight: '700', color: colors.accent, fontVariant: ['tabular-nums'] },
+  value: { fontSize: 30, fontFamily: fonts.display, color: colors.accent, fontVariant: ['tabular-nums'] },
   actions: { flexDirection: 'row', gap: 16, alignItems: 'center', flexWrap: 'wrap' },
   danger: { color: colors.danger, fontSize: 15 },
   link: { color: colors.accent, fontSize: 15 },

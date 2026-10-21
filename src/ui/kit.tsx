@@ -1,7 +1,14 @@
 import { ReactNode } from 'react';
 import { Animated, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { SymbolView } from 'expo-symbols';
 import { useFillIn, usePressScale } from './motion';
+
+/** Barlow Condensed for titles and figures (loaded in the root layout); body text stays the platform sans. */
+export const fonts = {
+  display: 'BarlowCondensed_700Bold',
+  displaySemi: 'BarlowCondensed_600SemiBold',
+};
 
 // Dark "tactical" theme: near-black olive surfaces, field green lightened to read on dark.
 export const colors = {
@@ -14,7 +21,7 @@ export const colors = {
   accentText: '#0B0D0A',
   danger: '#FF6B5E',
   chipBg: '#232920',
-  placeholder: '#6B7366',
+  placeholder: '#9AA394',
 };
 
 /** Scrolling page. Pass onRefresh to allow pull to refresh. */
@@ -50,6 +57,7 @@ export function HeaderAction({ label, onPress }: { label: string; onPress: () =>
   return (
     <Pressable accessibilityRole="button" onPress={onPress} onPressIn={press.onPressIn} onPressOut={press.onPressOut}>
       <Animated.View style={[styles.headerAction, { transform: [{ scale: press.scale }] }]}>
+        <SymbolView name={{ ios: 'plus', android: 'add', web: 'add' }} tintColor={colors.accent} size={18} />
         <Text style={styles.headerActionText}>{label}</Text>
       </Animated.View>
     </Pressable>
@@ -66,9 +74,9 @@ export function Header({ title, action }: { title: string; action?: ReactNode })
   );
 }
 
-/** Small upper-case label above a number or group, e.g. 'IPPT SCORE'. */
-export function Eyebrow({ children }: { children: string }) {
-  return <Text style={styles.eyebrow}>{children.toUpperCase()}</Text>;
+/** Heading for a group of content on a screen, e.g. 'Support' above a card. */
+export function SectionTitle({ children }: { children: string }) {
+  return <Text style={styles.section} accessibilityRole="header">{children}</Text>;
 }
 
 /** Thin bar showing value out of max, e.g. station points out of the station's maximum. */
@@ -111,12 +119,28 @@ export function Chip({ label, selected, onPress }: { label: string; selected: bo
   );
 }
 
+/** A large single-choice option with a title and a one-line explanation. */
+export function ChoiceCard({ title, detail, selected, onPress }: { title: string; detail?: string; selected: boolean; onPress: () => void }) {
+  const press = usePressScale();
+  return (
+    <Pressable accessibilityRole="radio" accessibilityState={{ selected }} onPress={onPress} onPressIn={press.onPressIn} onPressOut={press.onPressOut}>
+      <Animated.View style={[styles.choice, selected && styles.choiceSelected, { transform: [{ scale: press.scale }] }]}>
+        <View style={styles.choiceText}>
+          <Text style={styles.choiceTitle}>{title}</Text>
+          {detail ? <Text style={styles.choiceDetail}>{detail}</Text> : null}
+        </View>
+        <View style={[styles.radio, selected && styles.radioSelected]}>{selected ? <View style={styles.radioDot} /> : null}</View>
+      </Animated.View>
+    </Pressable>
+  );
+}
+
 /** A tappable settings-style row: label on the left, chevron on the right. */
 export function ListRow({ label, onPress, first }: { label: string; onPress: () => void; first?: boolean }) {
   return (
     <Pressable accessibilityRole="link" onPress={onPress} style={({ pressed }) => [styles.listRow, !first && styles.listDivider, pressed && { opacity: 0.7 }]}>
       <Text style={styles.listLabel}>{label}</Text>
-      <Text style={styles.chevron}>›</Text>
+      <SymbolView name={{ ios: 'chevron.right', android: 'chevron_right', web: 'chevron_right' }} tintColor={colors.muted} size={20} />
     </Pressable>
   );
 }
@@ -155,15 +179,22 @@ export function Field(props: {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bg },
   screen: { padding: 16, gap: 12 },
-  title: { fontSize: 24, fontWeight: '600', color: colors.text },
+  title: { fontSize: 32, fontFamily: fonts.display, color: colors.text, letterSpacing: 0.2 },
+  choice: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: colors.card, borderRadius: 12, borderWidth: 1, borderColor: colors.border, padding: 16, minHeight: 64 },
+  choiceSelected: { borderColor: colors.accent, backgroundColor: colors.chipBg },
+  choiceText: { flex: 1, gap: 2 },
+  choiceTitle: { fontSize: 17, fontWeight: '600', color: colors.text },
+  choiceDetail: { fontSize: 14, color: colors.muted },
+  radio: { width: 22, height: 22, borderRadius: 11, borderWidth: 2, borderColor: colors.muted, alignItems: 'center', justifyContent: 'center' },
+  radioSelected: { borderColor: colors.accent },
+  radioDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: colors.accent },
   listRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 14, minHeight: 48 },
   listDivider: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border },
   listLabel: { fontSize: 16, color: colors.text },
-  chevron: { fontSize: 22, color: colors.muted },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', minHeight: 44 },
-  headerAction: { borderWidth: 1, borderColor: colors.accent, borderRadius: 999, paddingVertical: 8, paddingHorizontal: 14, minHeight: 44, justifyContent: 'center' },
+  headerAction: { flexDirection: 'row', alignItems: 'center', gap: 4, borderWidth: 1, borderColor: colors.accent, borderRadius: 999, paddingVertical: 8, paddingLeft: 10, paddingRight: 14, minHeight: 44 },
   headerActionText: { color: colors.accent, fontSize: 15, fontWeight: '600' },
-  eyebrow: { fontSize: 12, fontWeight: '600', letterSpacing: 1, color: colors.muted },
+  section: { fontSize: 17, fontWeight: '600', color: colors.text, marginTop: 12 },
   track: { height: 4, borderRadius: 2, backgroundColor: colors.border, overflow: 'hidden' },
   fill: { height: 4, borderRadius: 2, backgroundColor: colors.accent },
   body: { fontSize: 16, lineHeight: 22, color: colors.text },

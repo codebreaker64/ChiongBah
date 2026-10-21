@@ -64,9 +64,23 @@ test('no official table yet', async () => {
 
 test('what if shows the total for a better result', async () => {
   await goals({ sessions: ALL, goal: { kind: 'award', award: 'gold' } });
-  expect(await screen.findByText('WHAT IF')).toBeTruthy();
+  expect(await screen.findByText('What if')).toBeTruthy();
   for (let i = 0; i < 5; i++) await fireEvent.press(screen.getByLabelText('More reps'));
   expect(screen.getByText('+5 reps')).toBeTruthy();
   expect(screen.getByText('50 reps')).toBeTruthy();
   expect(screen.getByText(/^Total \d+\/100 · /)).toBeTruthy();
+});
+
+test('score tables show points by age group, with your cell outlined', async () => {
+  await goals({ sessions: ALL });
+  await fireEvent.press(await screen.findByText('Score tables by age'));
+  expect(await screen.findByLabelText('40, age 0 to 21: 17 points')).toBeTruthy();
+  await fireEvent.press(screen.getByText('2.4km run'));
+  expect(await screen.findByLabelText('8:30, age 22 to 24: 50 points')).toBeTruthy();
+});
+
+test('score tables explain when no table is loaded', async () => {
+  await goals({ table: null });
+  await fireEvent.press(await screen.findByText('Score tables by age'));
+  expect(await screen.findByText('Score tables not added yet')).toBeTruthy();
 });

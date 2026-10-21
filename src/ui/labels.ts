@@ -3,6 +3,9 @@ import { formatLocalDate, todayInSingapore } from '@/domain/dates';
 import { formatRunTime } from '@/domain/entries/validate';
 import type { Station } from '@/domain/scoring/table';
 
+/** Status names as shown; 'Reservist' keeps the wording gender neutral. */
+export const STATUS_LABEL: Record<import('@/domain/profile').ServiceStatus, string> = { nsf: 'NSF', nsman: 'Reservist' };
+
 export const STATION_LABEL: Record<Station, string> = { pushup: 'Push-ups', situp: 'Sit-ups', run: '2.4km run' };
 
 export const SOURCE_LABEL: Record<SessionSource, string> = {
