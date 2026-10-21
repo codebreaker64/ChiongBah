@@ -58,4 +58,3 @@ test('delete asks first, then removes the result', async () => {
   expect(await screen.findByText('No results yet. Add one after your next training session.')).toBeTruthy();
 });
 
-test.todo('deleting the newest push-up result falls back to the previous one on Home');

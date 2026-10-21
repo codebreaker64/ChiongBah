@@ -26,3 +26,21 @@ export function sessionValue(s: Session): string {
 export function sessionDate(s: Session): string {
   return formatLocalDate(todayInSingapore(new Date(s.startedAt)));
 }
+
+export const AWARD_LABEL: Record<import('@/domain/scoring/awards').Award, string> = {
+  fail: 'Fail',
+  pass: 'Pass',
+  pass_incentive: 'Pass with Incentive',
+  silver: 'Silver',
+  gold: 'Gold',
+};
+
+/** Lower-case station names for sentences: 'push-ups', 'sit-ups', '2.4km run'. */
+export const STATION_NOUN: Record<Station, string> = { pushup: 'push-ups', situp: 'sit-ups', run: '2.4km run' };
+
+/** ['a'] → 'a'; ['a','b'] → 'a and b'; ['a','b','c'] → 'a, b and c'. */
+export function joinWithAnd(items: string[]): string {
+  return items.length <= 1 ? items.join('') : `${items.slice(0, -1).join(', ')} and ${items[items.length - 1]}`;
+}
+
+export const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
