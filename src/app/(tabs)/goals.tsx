@@ -5,24 +5,28 @@ import { countdownTo } from '@/domain/countdowns/countdowns';
 import { GoalTarget, goalProgress, StationGap } from '@/domain/goals/goals';
 import { scoringAge } from '@/domain/profile';
 import { Award, awardRules } from '@/domain/scoring/awards';
+import { MAX_POINTS } from '@/domain/scoring/table';
 import { currentTable } from '@/domain/scoring/tables';
-import { Body, Button, Card, Chip, ChipRow, colors, Field, Screen, Title } from '@/ui/kit';
+import { Body, Button, Card, Chip, ChipRow, colors, Eyebrow, Field, ProgressBar, Screen, Title } from '@/ui/kit';
 import { AWARD_LABEL, formatResult, plural, STATION_LABEL } from '@/ui/labels';
 import { PracticeEstimateLabel } from '@/ui/PracticeEstimateLabel';
 import { useState } from 'react';
-import { Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
 const AWARDS: Exclude<Award, 'fail'>[] = ['pass', 'pass_incentive', 'silver', 'gold'];
 
 function StationRow({ gap, cheapest }: { gap: StationGap; cheapest: boolean }) {
   return (
-    <View style={{ gap: 2, paddingVertical: 4 }}>
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-        <Text style={{ fontSize: 16, fontWeight: '600', color: colors.text }}>{STATION_LABEL[gap.station]}</Text>
-        {cheapest ? <Text style={{ color: colors.accent, fontWeight: '600' }}>Cheapest points</Text> : null}
+    <View style={styles.station}>
+      <View style={styles.stationHead}>
+        <Text style={styles.stationName}>{STATION_LABEL[gap.station]}</Text>
+        {cheapest ? <Text style={styles.tag}>Cheapest points</Text> : null}
       </View>
       {gap.current === null ? <Body muted>No result yet</Body> : (
-        <Body muted>{`Now ${formatResult(gap.station, gap.current)} · ${gap.currentPoints} pts`}</Body>
+        <>
+          <Body muted>{`Now ${formatResult(gap.station, gap.current)} · ${gap.currentPoints} pts`}</Body>
+          <ProgressBar value={gap.currentPoints ?? 0} max={MAX_POINTS[gap.station]} />
+        </>
       )}
       {gap.current !== null && gap.next.length === 0 ? <Body muted>Maximum points</Body> : null}
       {gap.next.map((step) => (
@@ -85,19 +89,28 @@ export default function Goals() {
       {progress && !('error' in progress) ? (
         <>
           <Card>
-            <Text style={{ fontSize: 22, fontWeight: '600', color: colors.text }}>{`Target ${progress.targetPoints} points`}</Text>
-            <Body muted>
-              {deadline.kind === 'upcoming' ? `IPPT in ${plural(deadline.days, 'day')}`
-                : deadline.kind === 'today' ? 'IPPT today'
-                : deadline.kind === 'passed' ? 'Your IPPT date has passed'
-                : 'Set your IPPT date in Settings'}
-            </Body>
-            {progress.total === null ? <Body>Log all three stations to see your gap.</Body>
-              : progress.met ? <Body>Target met</Body>
-              : progress.pointsNeeded === 0 ? <Body>Every station needs at least 1 point.</Body>
-              : <Body>{`${plural(progress.pointsNeeded ?? 0, 'point')} to go`}</Body>}
+            <Eyebrow>Your gap</Eyebrow>
+            {progress.total === null ? <Text style={styles.status}>Log all three stations to see your gap.</Text>
+              : progress.met ? <Text style={styles.status}>Target met</Text>
+              : progress.pointsNeeded === 0 ? <Text style={styles.status}>Every station needs at least 1 point.</Text>
+              : (
+                <View style={styles.gapRow} accessible accessibilityLabel={`${plural(progress.pointsNeeded ?? 0, 'point')} to go`}>
+                  <Text style={styles.gapNumber}>{String(progress.pointsNeeded)}</Text>
+                  <Text style={styles.gapCaption}>{`${progress.pointsNeeded === 1 ? 'point' : 'points'} to go`}</Text>
+                </View>
+              )}
+            <View style={styles.facts}>
+              <Body muted>{`Target ${progress.targetPoints} points`}</Body>
+              <Body muted>
+                {deadline.kind === 'upcoming' ? `IPPT in ${plural(deadline.days, 'day')}`
+                  : deadline.kind === 'today' ? 'IPPT today'
+                  : deadline.kind === 'passed' ? 'Your IPPT date has passed'
+                  : 'Set your IPPT date in Settings'}
+              </Body>
+            </View>
             <PracticeEstimateLabel />
           </Card>
+          <Eyebrow>By station</Eyebrow>
           <Card>
             {progress.stations.map((gap) => (
               <StationRow key={gap.station} gap={gap} cheapest={progress.cheapest[0] === gap.station} />
@@ -108,3 +121,15 @@ export default function Goals() {
     </Screen>
   );
 }
+
+const styles = StyleSheet.create({
+  station: { gap: 6, paddingVertical: 6 },
+  stationHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  stationName: { fontSize: 16, fontWeight: '600', color: colors.text },
+  tag: { color: colors.accent, fontWeight: '600', fontSize: 13 },
+  status: { fontSize: 22, fontWeight: '600', color: colors.text },
+  gapRow: { flexDirection: 'row', alignItems: 'baseline', gap: 8 },
+  gapNumber: { fontSize: 64, fontWeight: '700', color: colors.text, fontVariant: ['tabular-nums'], lineHeight: 72 },
+  gapCaption: { fontSize: 18, fontWeight: '600', color: colors.muted },
+  facts: { gap: 2 },
+});

@@ -105,7 +105,8 @@ export function ProfileForm(props: { initial?: Profile; submitLabel: string; tod
           accessibilityLabel="Commando, Diver or Guards"
           value={v.eliteVocation}
           onValueChange={(on) => set('eliteVocation', on)}
-          trackColor={{ true: colors.accent }}
+          trackColor={{ true: colors.accent, false: colors.border }}
+          thumbColor={colors.text}
         />
       </View>
 

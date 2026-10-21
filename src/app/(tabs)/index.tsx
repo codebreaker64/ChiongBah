@@ -5,11 +5,11 @@ import { scoringAge } from '@/domain/profile';
 import { awardRules, scoreIppt } from '@/domain/scoring/awards';
 import { MAX_POINTS, STATIONS } from '@/domain/scoring/table';
 import { currentTable } from '@/domain/scoring/tables';
-import { Body, Button, Card, colors, Eyebrow, ProgressBar, Screen, Title } from '@/ui/kit';
+import { Body, Button, Card, colors, Eyebrow, Header, HeaderAction, ProgressBar, Screen } from '@/ui/kit';
 import { AWARD_LABEL, formatResult, joinWithAnd, plural, STATION_LABEL, STATION_NOUN } from '@/ui/labels';
 import { PracticeEstimateLabel } from '@/ui/PracticeEstimateLabel';
 import { router } from 'expo-router';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
 function Big({ children }: { children: string }) {
   return <Text style={styles.big}>{children}</Text>;
@@ -46,12 +46,7 @@ export default function Home() {
 
   return (
     <Screen>
-      <View style={styles.header}>
-        <Title>Chiong Bah</Title>
-        <Pressable accessibilityRole="button" onPress={() => router.push('/log/new')} style={({ pressed }) => [styles.headerAction, pressed && { opacity: 0.8 }]}>
-          <Text style={styles.headerActionText}>+ Add result</Text>
-        </Pressable>
-      </View>
+      <Header title="Chiong Bah" action={<HeaderAction label="+ Add result" onPress={() => router.push('/log/new')} />} />
 
       <Card>
         <Eyebrow>IPPT score</Eyebrow>
@@ -133,9 +128,6 @@ export default function Home() {
 
 const styles = StyleSheet.create({
   big: { fontSize: 22, fontWeight: '600', color: colors.text },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  headerAction: { borderWidth: 1, borderColor: colors.accent, borderRadius: 999, paddingVertical: 8, paddingHorizontal: 14, minHeight: 44, justifyContent: 'center' },
-  headerActionText: { color: colors.accent, fontSize: 15, fontWeight: '600' },
   scoreRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' },
   scoreValue: { flexDirection: 'row', alignItems: 'baseline', gap: 4 },
   scoreNumber: { fontSize: 64, fontWeight: '700', color: colors.text, fontVariant: ['tabular-nums'], lineHeight: 72 },

@@ -13,6 +13,7 @@ export const colors = {
   accentText: '#0B0D0A',
   danger: '#FF6B5E',
   chipBg: '#232920',
+  placeholder: '#6B7366',
 };
 
 export function Screen({ children }: { children: ReactNode }) {
@@ -33,6 +34,25 @@ export function Body({ children, muted }: { children: ReactNode; muted?: boolean
 
 export function Card({ children }: { children: ReactNode }) {
   return <View style={styles.card}>{children}</View>;
+}
+
+/** Outlined pill for a screen's main action, placed beside the title. */
+export function HeaderAction({ label, onPress }: { label: string; onPress: () => void }) {
+  return (
+    <Pressable accessibilityRole="button" onPress={onPress} style={({ pressed }) => [styles.headerAction, pressed && { opacity: 0.8 }]}>
+      <Text style={styles.headerActionText}>{label}</Text>
+    </Pressable>
+  );
+}
+
+/** Title on the left, optional action on the right. */
+export function Header({ title, action }: { title: string; action?: ReactNode }) {
+  return (
+    <View style={styles.header}>
+      <Title>{title}</Title>
+      {action}
+    </View>
+  );
 }
 
 /** Small upper-case label above a number or group, e.g. 'IPPT SCORE'. */
@@ -95,6 +115,7 @@ export function Field(props: {
         value={props.value}
         onChangeText={props.onChangeText}
         placeholder={props.placeholder}
+        placeholderTextColor={colors.placeholder}
         keyboardType={props.keyboardType ?? 'default'}
         autoCapitalize="none"
         autoCorrect={false}
@@ -109,6 +130,9 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bg },
   screen: { padding: 16, gap: 12 },
   title: { fontSize: 24, fontWeight: '600', color: colors.text },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', minHeight: 44 },
+  headerAction: { borderWidth: 1, borderColor: colors.accent, borderRadius: 999, paddingVertical: 8, paddingHorizontal: 14, minHeight: 44, justifyContent: 'center' },
+  headerActionText: { color: colors.accent, fontSize: 15, fontWeight: '600' },
   eyebrow: { fontSize: 12, fontWeight: '600', letterSpacing: 1, color: colors.muted },
   track: { height: 4, borderRadius: 2, backgroundColor: colors.border, overflow: 'hidden' },
   fill: { height: 4, borderRadius: 2, backgroundColor: colors.accent },

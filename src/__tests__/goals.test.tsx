@@ -27,7 +27,7 @@ test('picking Gold shows target, gap, steps and cheapest station', async () => {
   const repos = await goals({ sessions: ALL });
   await fireEvent.press(await screen.findByText('Gold'));
   expect(await screen.findByText('Target 85 points')).toBeTruthy();
-  expect(screen.getByText('16 points to go')).toBeTruthy();
+  expect(screen.getByLabelText('16 points to go')).toBeTruthy();
   expect(screen.getByText('IPPT in 25 days')).toBeTruthy();
   expect(screen.getByText('+5 reps → 21 pts (11.1%)')).toBeTruthy();
   expect(screen.getByText('−50 s → 44 pts (7.7%)')).toBeTruthy();
