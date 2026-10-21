@@ -1,0 +1,11 @@
+{
+  "nsmanPass": 51,
+  "passWithIncentive": 61,
+  "silver": 75,
+  "gold": 85,
+  "eliteGold": 90,
+  "nsfPass": 61,
+  "eliteSilver": 80,
+  "unverified": ["nsfPass", "eliteSilver"],
+  "source": "ns.gov.sg IPPT stations and scoring system, retrieved 2026-10-21"
+}
