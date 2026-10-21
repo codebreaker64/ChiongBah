@@ -15,19 +15,19 @@ afterEach(() => jest.restoreAllMocks());
 
 test('NSF sees ORD and IPPT countdowns', async () => {
   await home({ profile: P });
-  expect(await screen.findByText('41 days to ORD')).toBeTruthy();
-  expect(screen.getByText('25 days to IPPT')).toBeTruthy();
+  expect(await screen.findByLabelText('41 days to ORD')).toBeTruthy();
+  expect(screen.getByLabelText('25 days to IPPT')).toBeTruthy();
 });
 
 test('SCDF NSF sees ROD', async () => {
   await home({ profile: { ...P, service: 'scdf' } });
-  expect(await screen.findByText('41 days to ROD')).toBeTruthy();
+  expect(await screen.findByLabelText('41 days to ROD')).toBeTruthy();
 });
 
 test('NSman sees no ORD card', async () => {
   await home({ profile: { ...P, status: 'nsman', ordRodDate: null } });
-  expect(await screen.findByText('25 days to IPPT')).toBeTruthy();
-  expect(screen.queryByText(/to ORD/)).toBeNull();
+  expect(await screen.findByLabelText('25 days to IPPT')).toBeTruthy();
+  expect(screen.queryByLabelText(/to ORD/)).toBeNull();
 });
 
 test('ORD passed offers switch to NSman', async () => {
@@ -59,7 +59,7 @@ test('missing run shows no total', async () => {
   await home({ profile: P, sessions: [manualSession('pushup', '2026-10-01T10:00:00Z', 50), manualSession('situp', '2026-10-01T10:00:00Z', 40)] });
   expect(await screen.findByText('Log 2.4km run to see your total.')).toBeTruthy();
   expect(screen.getByText('21 pts')).toBeTruthy();
-  expect(screen.queryByText(/^Total/)).toBeNull();
+  expect(screen.queryByLabelText(/^Total/)).toBeNull();
 });
 
 test('full results show total, award and practice label', async () => {
@@ -68,9 +68,15 @@ test('full results show total, award and practice label', async () => {
     manualSession('situp', '2026-10-01T10:00:00Z', 40),
     manualSession('run', '2026-10-01T10:00:00Z', 600),
   ] });
-  expect(await screen.findByText('Total 82/100')).toBeTruthy();
+  expect(await screen.findByLabelText('Total 82/100')).toBeTruthy();
   expect(screen.getByText('Silver')).toBeTruthy();
   expect(screen.getByText('Practice estimate')).toBeTruthy();
+});
+
+test('header action opens the add result form', async () => {
+  await home({ profile: P });
+  await fireEvent.press(await screen.findByText('+ Add result'));
+  expect(await screen.findByText('Add result')).toBeTruthy();
 });
 
 test('no official table yet', async () => {
@@ -101,11 +107,11 @@ test('countdown updates when the app returns from the background on a new day', 
   const { AppState } = jest.requireActual('react-native');
   const listen = jest.spyOn(AppState, 'addEventListener');
   await home({ profile: P });
-  expect(await screen.findByText('41 days to ORD')).toBeTruthy();
+  expect(await screen.findByLabelText('41 days to ORD')).toBeTruthy();
   jest.spyOn(clock, 'now').mockImplementation(() => new Date('2026-10-22T01:00:00Z'));
   const handlers = listen.mock.calls.filter(([type]) => type === 'change').map(([, h]) => h as (s: string) => void);
   expect(handlers.length).toBeGreaterThan(0);
   const { act } = jest.requireActual('expo-router/testing-library');
   await act(async () => handlers.forEach((h) => h('active')));
-  expect(await screen.findByText('40 days to ORD')).toBeTruthy();
+  expect(await screen.findByLabelText('40 days to ORD')).toBeTruthy();
 });

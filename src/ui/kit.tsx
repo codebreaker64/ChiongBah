@@ -2,16 +2,17 @@ import { ReactNode } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+// Dark "tactical" theme: near-black olive surfaces, field green lightened to read on dark.
 export const colors = {
-  bg: '#F4F5F0',
-  card: '#FFFFFF',
-  text: '#1C1F1A',
-  muted: '#5E6559',
-  border: '#D9DCD3',
-  accent: '#3B5D2E', // field green
-  accentText: '#FFFFFF',
-  danger: '#A3261E',
-  chipBg: '#E7EBE1',
+  bg: '#0B0D0A',
+  card: '#161A14',
+  text: '#EEF1EA',
+  muted: '#9AA394',
+  border: '#2A3026',
+  accent: '#8FBF6A', // field green
+  accentText: '#0B0D0A',
+  danger: '#FF6B5E',
+  chipBg: '#232920',
 };
 
 export function Screen({ children }: { children: ReactNode }) {
@@ -32,6 +33,21 @@ export function Body({ children, muted }: { children: ReactNode; muted?: boolean
 
 export function Card({ children }: { children: ReactNode }) {
   return <View style={styles.card}>{children}</View>;
+}
+
+/** Small upper-case label above a number or group, e.g. 'IPPT SCORE'. */
+export function Eyebrow({ children }: { children: string }) {
+  return <Text style={styles.eyebrow}>{children.toUpperCase()}</Text>;
+}
+
+/** Thin bar showing value out of max, e.g. station points out of the station's maximum. */
+export function ProgressBar({ value, max }: { value: number; max: number }) {
+  const pct = Math.max(0, Math.min(1, value / max)) * 100;
+  return (
+    <View style={styles.track}>
+      <View style={[styles.fill, { width: `${pct}%` }]} />
+    </View>
+  );
 }
 
 export function Button({ label, onPress, secondary }: { label: string; onPress: () => void; secondary?: boolean }) {
@@ -93,6 +109,9 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bg },
   screen: { padding: 16, gap: 12 },
   title: { fontSize: 24, fontWeight: '600', color: colors.text },
+  eyebrow: { fontSize: 12, fontWeight: '600', letterSpacing: 1, color: colors.muted },
+  track: { height: 4, borderRadius: 2, backgroundColor: colors.border, overflow: 'hidden' },
+  fill: { height: 4, borderRadius: 2, backgroundColor: colors.accent },
   body: { fontSize: 16, lineHeight: 22, color: colors.text },
   muted: { color: colors.muted },
   card: { backgroundColor: colors.card, borderRadius: 12, padding: 16, gap: 8, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border },
