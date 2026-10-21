@@ -1,4 +1,4 @@
-# IPPT Trainer — Plan 1: Foundation and no-camera app
+# Chiong Bah — Plan 1: Foundation and no-camera app
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
@@ -18,7 +18,7 @@
 - React Native New Architecture, TypeScript `strict: true`. Expo development builds (`expo-dev-client`), not Expo Go.
 - `src/domain/**` must not import `react`, `react-native`, `expo*`, or anything under `src/adapters`, `src/app-state`, `src/ui`, `app/`. Enforced by ESLint (Task 1).
 - All calendar dates are `YYYY-MM-DD` strings and are computed in Asia/Singapore time (UTC+8, no daylight saving).
-- Unofficial app: no SAF, MINDEF, SPF or SCDF logos or branding. App name "IPPT Trainer".
+- Unofficial app: no SAF, MINDEF, SPF or SCDF logos or branding. App name "Chiong Bah"; Play Store title "Chiong Bah: IPPT Trainer & ORD Countdown".
 - Every displayed score or award carries the label "Practice estimate".
 - First-launch copy, exactly: "Not affiliated with MINDEF/SAF/SPF/SCDF; scores are practice estimates." and "Consult a doctor if you have medical conditions."
 - Award thresholds: Pass (NSmen) ≥ 51; Pass with Incentive ≥ 61; Silver ≥ 75; Gold ≥ 85; Gold for Commando/Diver/Guards ≥ 90; at least 1 point at every station.
@@ -94,7 +94,7 @@ Tests sit next to the file they test as `*.test.ts(x)`; screen tests live in `ap
 
 - [ ] **Step 1: Create the app in a temp folder and move it in**
 
-Run: `npx create-expo-app@latest ippt-tmp --template default` then move its contents (not `.git`) into the repo root; delete the template's example screens and components, leaving an empty `app/(tabs)/index.tsx` that renders `<Text>IPPT Trainer</Text>`.
+Run: `npx create-expo-app@latest ippt-tmp --template default` then move its contents (not `.git`) into the repo root; delete the template's example screens and components, leaving an empty `app/(tabs)/index.tsx` that renders `<Text>Chiong Bah</Text>`.
 
 - [ ] **Step 2: Install dependencies**
 
@@ -102,7 +102,7 @@ Run: `npx expo install expo-sqlite expo-dev-client expo-build-properties` and `n
 
 - [ ] **Step 3: Configure**
 
-`app.json`: `name` "IPPT Trainer", `slug` "ippt-trainer", `android.package` "com.kaijiefong.ippttrainer", `newArchEnabled: true`, plugins include `["expo-build-properties", { "android": { "minSdkVersion": 26 } }]` and `"expo-sqlite"`. `tsconfig.json`: `"strict": true`. `package.json` scripts: `"test": "jest"`, `"lint": "eslint ."`. `jest.config.js`: `preset: 'jest-expo'`, `testPathIgnorePatterns: ['/node_modules/', '/docs/']`.
+`app.json`: `name` "Chiong Bah", `slug` "chiong-bah", `android.package` "com.kaijiefong.chiongbah", `newArchEnabled: true`, plugins include `["expo-build-properties", { "android": { "minSdkVersion": 26 } }]` and `"expo-sqlite"`. `tsconfig.json`: `"strict": true`. `package.json` scripts: `"test": "jest"`, `"lint": "eslint ."`. `jest.config.js`: `preset: 'jest-expo'`, `testPathIgnorePatterns: ['/node_modules/', '/docs/']`.
 
 `eslint.config.js`: the template's config plus an override for `src/domain/**` with `no-restricted-imports` patterns `['react', 'react-native', 'react-native/*', 'expo*', '@expo/*', '**/adapters/**', '**/app-state/**', '**/ui/**', '@/app/*']`.
 

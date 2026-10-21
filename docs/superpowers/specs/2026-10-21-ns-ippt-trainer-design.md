@@ -1,8 +1,9 @@
-# NS IPPT Trainer — design spec (version 1)
+# Chiong Bah — design spec (version 1)
 
 - **Date:** 21 Oct 2026
 - **Status:** Draft for review
 - **Platform:** Android first (Google Play), React Native
+- **App name:** Chiong Bah (Play Store title: "Chiong Bah: IPPT Trainer & ORD Countdown")
 
 ## 1. Summary
 
