@@ -71,16 +71,8 @@ test('what if shows the total for a better result', async () => {
   expect(screen.getByText(/^Total \d+\/100 · /)).toBeTruthy();
 });
 
-test('score tables show points by age group, with your cell outlined', async () => {
+test('goals links to the score table image', async () => {
   await goals({ sessions: ALL });
   await fireEvent.press(await screen.findByText('Score tables by age'));
-  expect(await screen.findByLabelText('40, age 0 to 21: 17 points')).toBeTruthy();
-  await fireEvent.press(screen.getByText('2.4km run'));
-  expect(await screen.findByLabelText('8:30, age 22 to 24: 50 points')).toBeTruthy();
-});
-
-test('score tables explain when no table is loaded', async () => {
-  await goals({ table: null });
-  await fireEvent.press(await screen.findByText('Score tables by age'));
-  expect(await screen.findByText('Score tables not added yet')).toBeTruthy();
+  expect(await screen.findByLabelText('IPPT score table')).toBeTruthy();
 });
