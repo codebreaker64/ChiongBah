@@ -71,8 +71,10 @@ test('what if shows the total for a better result', async () => {
   expect(screen.getByText(/^Total \d+\/100 · /)).toBeTruthy();
 });
 
-test('goals links to the score table image', async () => {
+test('goals links to the score table images, one per station', async () => {
   await goals({ sessions: ALL });
   await fireEvent.press(await screen.findByText('Score tables by age'));
-  expect(await screen.findByLabelText('IPPT score table')).toBeTruthy();
+  expect(await screen.findByLabelText('Push-ups score table')).toBeTruthy();
+  await fireEvent.press(screen.getByText('2.4km run'));
+  expect(await screen.findByLabelText('2.4km run score table')).toBeTruthy();
 });
