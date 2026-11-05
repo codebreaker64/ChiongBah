@@ -320,7 +320,7 @@ These keep the existing copy, which is visible on the canvas. Help is an accordi
 | Thing | Location |
 |---|---|
 | Tokens | `src/ui/theme.ts` (new), replacing the inline colours in `src/ui/kit.tsx` |
-| Medal | `src/ui/Emblem.tsx`, replacing the crosshair with a `react-native-svg` medal component that takes an optional `animated` prop |
+| Medal | `src/ui/Emblem.tsx`, replacing the crosshair with a `react-native-svg` medal component that takes an optional `animated` prop. `react-native-svg` is not installed yet, so add it with `npx expo install react-native-svg` |
 | Motion presets | `src/ui/motion.ts`, holding the house easing, durations and a `useMotionOK()` hook that wraps reduce motion |
 | Onboarding steps | `src/app/onboarding/[step].tsx`, or one file per step, driven by a step list that applies the conditions in section 6.2 |
 | Camera routes | `src/app/camera/index.tsx` (choose station, `?station=`), `access.tsx`, `frame.tsx`, `live.tsx` and `result.tsx` |
