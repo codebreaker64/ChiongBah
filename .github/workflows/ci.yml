@@ -55,6 +55,6 @@ jobs:
 
       # GitHub's own secret scanning is not free on private personal repos,
       # so gitleaks fills that gap (free for personal accounts).
-      - uses: gitleaks/gitleaks-action@v2
+      - uses: gitleaks/gitleaks-action@v3
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
