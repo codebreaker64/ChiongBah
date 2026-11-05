@@ -23,15 +23,20 @@ test('no goal prompts to pick one', async () => {
   expect(await screen.findByText('Pick a target to see your gap.')).toBeTruthy();
 });
 
-test('picking Gold shows target, gap, steps and cheapest station', async () => {
+test('picking Gold shows the gap, the deadline and the easiest route', async () => {
+  // Latest: 45 push-ups (17), 40 sit-ups (17), 10:50 run (35) = 69 in the test table.
   const repos = await goals({ sessions: ALL });
   await fireEvent.press(await screen.findByText('Gold'));
-  expect(await screen.findByText('Target 85 points')).toBeTruthy();
-  expect(screen.getByLabelText('16 points to go')).toBeTruthy();
-  expect(screen.getByText('IPPT in 25 days')).toBeTruthy();
-  expect(screen.getByText('+5 reps → 21 pts (11.1%)')).toBeTruthy();
-  expect(screen.getByText('−50 s → 44 pts (7.7%)')).toBeTruthy();
-  expect(screen.getAllByText('Cheapest points')).toHaveLength(1);
+  expect(await screen.findByLabelText('16 points to Gold')).toBeTruthy();
+  expect(screen.getByText('25 days left')).toBeTruthy();
+  expect(screen.getByText('Now 69 · Pass with Incentive')).toBeTruthy();
+  expect(screen.getByText('Gold 85')).toBeTruthy();
+  expect(screen.getByText('Easiest route to Gold')).toBeTruthy();
+  // Run 10:50 → 8:30 (+15) and push-ups 45 → 50 (+4) is the smallest total improvement.
+  expect(screen.getByText('10:50 → 8:30')).toBeTruthy();
+  expect(screen.getByText('+15 pts')).toBeTruthy();
+  expect(screen.getByText('45 → 50 reps')).toBeTruthy();
+  expect(screen.getByText('88 · Gold')).toBeTruthy();
   expect(repos.goal.get()).toEqual({ kind: 'award', award: 'gold' });
 });
 
@@ -46,15 +51,15 @@ test('custom score outside 1–100 is rejected; a valid one is saved', async () 
   expect(repos.goal.get()).toBeNull();
   await fireEvent.changeText(screen.getByLabelText('Custom score'), '60');
   await fireEvent.press(screen.getByText('Set target'));
-  expect(await screen.findByText('Target 60 points')).toBeTruthy();
-  expect(screen.getByText('Target met')).toBeTruthy();
+  expect(await screen.findByText('Target met')).toBeTruthy();
+  expect(screen.queryByText(/^Easiest route/)).toBeNull();
   expect(repos.goal.get()).toEqual({ kind: 'score', points: 60 });
 });
 
 test('a missing station hides the total gap', async () => {
   await goals({ sessions: ALL.slice(0, 2), goal: { kind: 'award', award: 'silver' } });
   expect(await screen.findByText('Log all three stations to see your gap.')).toBeTruthy();
-  expect(screen.getByText('No result yet')).toBeTruthy();
+  expect(screen.queryByText(/^Easiest route/)).toBeNull();
 });
 
 test('no official table yet', async () => {
@@ -62,13 +67,13 @@ test('no official table yet', async () => {
   expect(await screen.findByText('Scoring tables not added yet.')).toBeTruthy();
 });
 
-test('what if shows the total for a better result', async () => {
+test('what if shows the points and total for a better result', async () => {
   await goals({ sessions: ALL, goal: { kind: 'award', award: 'gold' } });
   expect(await screen.findByText('What if')).toBeTruthy();
   for (let i = 0; i < 5; i++) await fireEvent.press(screen.getByLabelText('More reps'));
-  expect(screen.getByText('+5 reps')).toBeTruthy();
   expect(screen.getByText('50 reps')).toBeTruthy();
-  expect(screen.getByText(/^Total \d+\/100 · /)).toBeTruthy();
+  expect(screen.getByText('+5 reps · +4 pts')).toBeTruthy();
+  expect(screen.getByText('Total 73/100 · Pass with Incentive')).toBeTruthy();
 });
 
 test('goals links to the score table images, one per station', async () => {

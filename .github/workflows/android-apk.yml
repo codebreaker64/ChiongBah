@@ -1,0 +1,123 @@
+name: Android APK
+
+# Push a tag like v1.1.0 to build a signed APK and publish it as a GitHub Release.
+# Run it by hand from the Actions tab to get an APK as a downloadable artifact without a release.
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+concurrency:
+  group: android-apk-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Lint, typecheck and test
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx expo lint
+      - run: npx tsc --noEmit
+      - run: npx jest --ci
+
+  build:
+    name: Build release APK
+    needs: check
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: write # to create the GitHub Release
+    env:
+      HAS_KEYSTORE: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      # React Native 0.88 and Android Gradle Plugin 9 build with JDK 17.
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: android-actions/setup-android@v3
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - run: npm ci
+
+      - name: Work out the version
+        id: version
+        run: |
+          if [[ "$GITHUB_REF_TYPE" == "tag" ]]; then
+            VERSION="${GITHUB_REF_NAME#v}"
+          else
+            VERSION="$(node -p "require('./app.json').expo.version")-build.${GITHUB_RUN_NUMBER}"
+          fi
+          echo "name=$VERSION" >> "$GITHUB_OUTPUT"
+          # Android only installs an update with a higher versionCode; the run number only goes up.
+          echo "APP_VERSION=$VERSION" >> "$GITHUB_ENV"
+          echo "ANDROID_VERSION_CODE=$((100 + GITHUB_RUN_NUMBER))" >> "$GITHUB_ENV"
+
+      # android/ is generated from app.json and the config plugins (Continuous Native Generation).
+      - name: Generate the Android project
+        run: npx expo prebuild --platform android --no-install --clean
+
+      - name: Unpack the upload keystore
+        if: env.HAS_KEYSTORE == 'true'
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/upload.jks"
+          echo "CHIONGBAH_UPLOAD_STORE_FILE=$RUNNER_TEMP/upload.jks" >> "$GITHUB_ENV"
+
+      - name: Build the APK
+        working-directory: android
+        env:
+          CHIONGBAH_UPLOAD_STORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          CHIONGBAH_UPLOAD_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          CHIONGBAH_UPLOAD_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          echo "org.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=1g -Dfile.encoding=UTF-8" >> gradle.properties
+          ./gradlew assembleRelease --no-daemon -PreactNativeArchitectures=arm64-v8a,armeabi-v7a
+
+      - name: Name the APK
+        id: apk
+        run: |
+          APK="chiong-bah-${{ steps.version.outputs.name }}.apk"
+          mv android/app/build/outputs/apk/release/app-release.apk "$APK"
+          echo "file=$APK" >> "$GITHUB_OUTPUT"
+          {
+            echo "### $APK"
+            echo ""
+            echo "versionName \`$APP_VERSION\`, versionCode \`$ANDROID_VERSION_CODE\`"
+            if [[ "$HAS_KEYSTORE" != "true" ]]; then
+              echo ""
+              echo "> **Signed with the debug key.** Fine for sideloading, but add the ANDROID_KEYSTORE_* secrets"
+              echo "> before sharing it widely: Android won't update a debug-signed install with a release-signed one."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.apk.outputs.file }}
+          path: ${{ steps.apk.outputs.file }}
+          if-no-files-found: error
+
+      - name: Publish the GitHub Release
+        if: github.ref_type == 'tag'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ steps.apk.outputs.file }}
+          generate_release_notes: true
+          prerelease: ${{ contains(github.ref_name, '-') }}

@@ -1,5 +1,5 @@
 import { miniTable } from './__fixtures__/miniTable';
-import { awardRules, scoreIppt, Who } from './awards';
+import { awardRules, nextAward, scoreIppt, Who } from './awards';
 
 const nsman: Who = { status: 'nsman', eliteVocation: false };
 const s = (pushup: number | null, situp: number | null, run: number | null) =>
@@ -29,4 +29,20 @@ test('missing result gives station points but no total', () => {
 
 test('age outside the table', () => {
   expect(scoreIppt({ pushup: 50, situp: 40, run: 600 }, 61, miniTable, nsman, awardRules)).toEqual({ error: 'no_age_band' });
+});
+
+describe('nextAward', () => {
+  const nsf = { status: 'nsf' as const, eliteVocation: false };
+  test('77 as an NSF is 8 points short of Gold', () => {
+    expect(nextAward(77, nsf, awardRules)).toEqual({ award: 'gold', pointsToGo: 8 });
+  });
+  test('reservists climb through Pass with Incentive', () => {
+    expect(nextAward(55, { status: 'nsman', eliteVocation: false }, awardRules)).toEqual({ award: 'pass_incentive', pointsToGo: awardRules.passWithIncentive - 55 });
+  });
+  test('Commando, Diver and Guards need more for Silver', () => {
+    expect(nextAward(77, { status: 'nsf', eliteVocation: true }, awardRules)).toEqual({ award: 'silver', pointsToGo: awardRules.eliteSilver - 77 });
+  });
+  test('nothing above Gold', () => {
+    expect(nextAward(90, nsf, awardRules)).toBeNull();
+  });
 });

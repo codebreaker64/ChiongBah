@@ -52,3 +52,20 @@ export function scoreIppt(
   const full = points as Record<Station, number>;
   return { points, total: full.pushup + full.situp + full.run, award: awardFor(full, who, rules) };
 }
+
+/** Points each award needs for this person, lowest first. Pass with Incentive is for reservists only. */
+export function awardLadder(who: Who, rules: AwardRules): { award: Exclude<Award, 'fail'>; points: number }[] {
+  const ladder: { award: Exclude<Award, 'fail'>; points: number }[] = [
+    { award: 'pass', points: who.status === 'nsf' ? rules.nsfPass : rules.nsmanPass },
+  ];
+  if (who.status === 'nsman') ladder.push({ award: 'pass_incentive', points: rules.passWithIncentive });
+  ladder.push({ award: 'silver', points: who.eliteVocation ? rules.eliteSilver : rules.silver });
+  ladder.push({ award: 'gold', points: who.eliteVocation ? rules.eliteGold : rules.gold });
+  return ladder;
+}
+
+/** The next award above `total`, and how many points it still needs; null at Gold. */
+export function nextAward(total: number, who: Who, rules: AwardRules): { award: Exclude<Award, 'fail'>; pointsToGo: number } | null {
+  const next = awardLadder(who, rules).find((a) => a.points > total);
+  return next ? { award: next.award, pointsToGo: next.points - total } : null;
+}
