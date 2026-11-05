@@ -1,0 +1,8 @@
+version: 2
+updates:
+  # Keep the CI actions themselves current. npm bumps are left out on purpose:
+  # Expo pins SDK-compatible versions, so upgrade with `npx expo install --fix`.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
