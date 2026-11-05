@@ -200,12 +200,15 @@ Add result "Count with camera" ─┼→ Choose station (push-ups | sit-ups)
                                 │        ↓ Continue
                                 │  Allow camera   (first time only; shared by both stations)
                                 │        ↓
-                                │  Get in frame   (station-specific checks)
-                                │        ↓ auto-starts when every check passes, or "Start anyway"
-                                │  Counting (60 s)
+                                │  Get in frame   (station-specific checks)       ┐ landscape
+                                │        ↓ auto-starts when every check passes,   │
+                                │          or "Start anyway"                      │
+                                │  Counting (60 s)                                ┘
                                 │        ↓ timer ends, or "Stop"
                                 └  Result → Save to log | Try again (back to Get in frame) | Discard (Home)
 ```
+
+**Orientation.** The app stays portrait everywhere except **Get in frame** and **Counting**, which are locked to landscape for both stations. A person in a plank or lying down for sit-ups is wide rather than tall, so landscape gives the pose model more pixels on the body and lets the phone sit further back. The app rotates to landscape as you leave Allow camera (or Choose station, once permission has been granted), and goes back to portrait on Result. Try again rotates back to landscape. Lock to `LANDSCAPE` rather than a single direction, so the user can prop the phone either way up and the preview is never upside down.
 
 On Choose station, the two station cards act as a segmented control. Tapping Sit-ups swaps the illustration and tips in place; it is one route with a `station` parameter, not two separate screens. The canvas draws the two states as separate boards only so both can be seen.
 
@@ -256,14 +259,14 @@ A segmented control picks the station. A note follows: "Points for each result b
 
 ### 7.10 Camera: choose station (push-ups and sit-ups)
 - **Shared:** a close button, the title "Count with camera", and the sub-line "A 1-minute timed set, counted the way an IPPT station does." Two station cards show the personal best ("Push-ups · Best 42", "Sit-ups · Best 38"), and the selected card uses the selected-card style. Below them, the privacy line reads "Video stays on your phone. Nothing is recorded or uploaded." The primary button "Continue" ends the screen.
-- **Push-ups:** the illustration shows a phone on the floor about 2 m to the side of someone in the push-up position, captioned "About 2 m away, side on". The tips are "Prop your phone on the floor, side on to you.", "Keep your whole body, head to feet, in frame." and "Good light and a plain background help."
-- **Sit-ups:** the illustration shows the same set-up, with a person in the sit-up position with knees bent. The tips are "Prop your phone on the floor, side on to you.", "Knees bent, feet flat or held by a buddy." and "Keep your whole body, head to feet, in frame."
+- **Push-ups:** the illustration shows a phone turned sideways on the floor about 2 m to the side of someone in the push-up position, captioned "Phone sideways, about 2 m away, side on". The tips are "Prop your phone sideways on the floor, side on to you.", "Keep your whole body, head to feet, in frame." and "Good light and a plain background help."
+- **Sit-ups:** the illustration shows the same set-up, with a person in the sit-up position with knees bent. The tips are "Prop your phone sideways on the floor, side on to you.", "Knees bent, feet flat or held by a buddy." and "Keep your whole body, head to feet, in frame."
 
 ### 7.11 Camera: allow access (shared)
 A camera icon sits in a `surface` disc, with the heading "Allow camera access". The body reads "The camera is only on while you count. Each frame is checked on your phone to find your body position, then thrown away." The primary button is "Allow camera", which brings up the system prompt. The secondary button is "Type my reps instead". The footnote reads "You can change this later in Android settings." If the user has already refused permission permanently, the primary button changes to "Open settings".
 
-### 7.12 Camera: get in frame
-The live camera preview fills the screen, with the tracked skeleton drawn over it (accent lines and white joints) and four corner frame brackets. The top bar shows a close button and a "Push-ups · 1:00" or "Sit-ups · 1:00" pill. A bottom sheet holds a heading for the first failing check, one line of help, and a checklist.
+### 7.12 Camera: get in frame (landscape, 844 × 390)
+The camera preview takes the left side of the screen, with the tracked skeleton drawn over it (accent lines and white joints) and four corner frame brackets. A close button and a "Push-ups · 1:00" or "Sit-ups · 1:00" pill float at the top left. A side panel on the right, 300 px wide, uses `bg` with a 24 px radius on its left corners. The panel holds a heading for the first failing check (26 px), one line of help, the checklist, and "Start anyway" pinned at the bottom.
 
 | Station | Checks | Example of a failing heading |
 |---|---|---|
@@ -274,17 +277,17 @@ The help line ends with "The timer starts by itself once everything is ticked." 
 
 The knee angle threshold for "Knees bent" comes from the sit-up rule config in section 6.4 of the version 1 spec, not from a constant in the UI.
 
-### 7.13 Camera: counting
-The camera preview and skeleton fill the screen. The top bar shows a station pill and a time-left pill ("0:24 left") with a pulsing red dot. In the centre is the timer ring: a 220 px circle with an 8 px stroke, a `border` track and an `accent` arc. Inside it are the big count and the line "reps · 17 pts", where the points update live from the table.
+### 7.13 Camera: counting (landscape, 844 × 390)
+The camera preview and skeleton fill the left side. A station pill and a time-left pill ("0:24 left", with a pulsing red dot) float at the top left. A side panel on the right, 240 px wide, holds the timer ring at the top: a 160 px circle with an 8 px stroke, a `border` track and an `accent` arc. Inside the ring is the count (84 px). Under the ring is the line "reps · 17 pts", where the points update live from the table.
 
-When a rep is not counted, a cue card in a `gold` border slides up for 2.5 s with the reason:
+When a rep is not counted, a cue card in a `gold` border slides up near the top of the camera area, centred over it, for 2.5 s with the reason:
 
 | Station | Cues |
 |---|---|
 | Push-ups | "Go lower: that one didn't count" · "Straighten your arms at the top" |
 | Sit-ups | "Lie back fully: that one didn't count" · "Sit up higher: that one didn't count" |
 
-The bottom sheet shows "2 not counted" and "Best so far: 42" on the left, and a `danger` "Stop" button on the right. Each counted rep plays one short tick sound (the version 1 spec covers this). Keep the screen awake while counting.
+The foot of the panel shows "2 not counted" and "Best so far: 42" on one line, with a full-width `danger` "Stop" button (52 px) below it. Each counted rep plays one short tick sound (the version 1 spec covers this). Keep the screen awake while counting.
 
 ### 7.14 Camera: result
 - **Badge:** "New best" in `gold`, shown only when the count beats the user's best for that station.
@@ -308,7 +311,7 @@ These keep the existing copy, which is visible on the canvas. Help is an accordi
 - The live count is a polite live region. It announces "27 reps" every 5 reps and when a rep is not counted ("Not counted, lie back fully"), so screen-reader users are not flooded with announcements.
 - Camera illustrations and skeleton overlays have one descriptive label each. For example, the get-in-frame skeleton reads "Camera view: a person lying on their back with legs almost straight".
 - Colour is never the only signal. Failed checks have a cross icon and text, and cues have an icon and text.
-- Text scales with the system font size up to 1.3×. Above that, the display numbers are capped so the count still fits inside the ring.
+- Text scales with the system font size up to 1.3×. Above that, the display numbers are capped so the count still fits inside the 160 px ring, and the landscape panels scroll instead of clipping.
 - Reduce motion is handled as described in section 5.1.
 
 ## 9. Implementation notes
@@ -326,7 +329,10 @@ These keep the existing copy, which is visible on the canvas. Help is an accordi
 | Camera routes | `src/app/camera/index.tsx` (choose station, `?station=`), `access.tsx`, `frame.tsx`, `live.tsx` and `result.tsx` |
 | Result bars data | Taken from rep timestamps in `RepOutcome` and grouped into six 10 s buckets in the domain layer, not in the screen |
 
-### 9.3 Fonts and numbers
+### 9.3 Orientation
+Use `expo-screen-orientation` (not installed yet; add it with `npx expo install expo-screen-orientation`). Call `lockAsync(OrientationLock.LANDSCAPE)` when the Get in frame route gains focus, and `lockAsync(OrientationLock.PORTRAIT_UP)` when Result gains focus or the flow is closed. In `app.json`, set `orientation` to `default` so the lock can take effect, and keep every other route portrait by locking it in the root layout. Pass the current rotation to the pose pipeline, because VisionCamera frames arrive in the sensor's orientation. The landmark coordinates must be rotated before the rep rules see them, otherwise "lower" and "higher" are swapped. Add a `ReplayPoseSource` recording that was filmed in landscape to the test set.
+
+### 9.4 Fonts and numbers
 Use `fontVariant: ['tabular-nums']` on every numeric `Text`. Barlow Condensed supports it. Check this on a real Pixel device, because some Android font fallbacks ignore `fontVariant`.
 
 ## 10. Acceptance checklist
@@ -337,6 +343,7 @@ Use `fontVariant: ['tabular-nums']` on every numeric `Text`. Barlow Condensed su
 - [ ] Home, Goals and Result points match the scoring engine for the mock profile: 77 total, 8 to Gold, 44 push-ups = 21 pts, 41 sit-ups = 20 pts.
 - [ ] Both camera stations can be completed from start to finish, including "Type my reps instead", "Start anyway", Stop part-way, ± correction, Try again and Discard.
 - [ ] Sit-ups reuse the shared access screen, and permission is asked for only once.
+- [ ] Get in frame and Counting are landscape for both stations, work with the phone either way up, and Result and everything else stay portrait.
 - [ ] All touch targets are at least 44 px, all icon buttons have labels, and the live count announces as described in section 8.
 - [ ] Numbers do not shift sideways while they count.
 - [ ] `npx expo lint` and `npx tsc --noEmit` are clean, and the existing Jest tests pass with new tests added for the onboarding step conditions and the 10-second buckets.
@@ -348,5 +355,5 @@ These defaults are built in unless Kai Jie says otherwise:
 1. **Logo:** the gold medal, with the two alternatives kept in the repo but not shipped.
 2. **Timer start:** automatic, after a 3-2-1 countdown once all checks pass, with "Start anyway" as a manual override.
 3. **No-rep feedback:** both. A cue appears live during the set, and a summary with reasons appears on the result.
-4. **Phone orientation:** portrait for both stations, as drawn. Landscape might frame a lying body better. Test it in the first device trial before committing to it.
+4. **Phone orientation:** decided. Get in frame and Counting use landscape for both stations (Kai Jie, 5 Nov).
 5. **Score table images:** sit-up and 2.4 km run images are still needed for Score tables. The push-up image is already in the design.
