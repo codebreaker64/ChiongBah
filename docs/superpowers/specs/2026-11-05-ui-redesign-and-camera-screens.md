@@ -258,7 +258,7 @@ The header reads "8 points to Gold" and "25 days left", with a progress bar from
 A segmented control picks the station. A note follows: "Points for each result by age group. Scroll sideways to see every age group." The table area is a white card that holds the official table image, and it pans both ways. The push-up image already exists. The sit-up and run images are needed (open item 3 in section 11).
 
 ### 7.10 Camera: choose station (push-ups and sit-ups)
-- **Shared:** a close button, the title "Count with camera", and the sub-line "A 1-minute timed set, counted the way an IPPT station does." Two station cards show the personal best ("Push-ups · Best 42", "Sit-ups · Best 38"), and the selected card uses the selected-card style. Below them, the privacy line reads "Video stays on your phone. Nothing is recorded or uploaded." The primary button "Continue" ends the screen.
+- **Shared:** a close button, the title "Count with camera", and the sub-line "A 1-minute timed set, counted the way an IPPT station does." Two station cards show the personal best ("Push-ups · Best 42", "Sit-ups · Best 38"), and the selected card uses the selected-card style. Below the tips is a hands-free start note in a `surface` card with a speaker icon: "Hands-free start: once everything is ticked and you are in push-up position (sit-up position), the phone says “3, 2, 1, go” out loud and the timer starts." The note is there so the voice does not startle the user. Below it, the privacy line reads "Video stays on your phone. Nothing is recorded or uploaded." The primary button "Continue" ends the screen.
 - **Push-ups:** the illustration shows a phone turned sideways on the floor about 2 m to the side of someone in the push-up position, captioned "Phone sideways, about 2 m away, side on". The tips are "Prop your phone sideways on the floor, side on to you.", "Keep your whole body, head to feet, in frame." and "Good light and a plain background help."
 - **Sit-ups:** the illustration shows the same set-up, with a person in the sit-up position with knees bent. The tips are "Prop your phone sideways on the floor, side on to you.", "Knees bent, feet flat or held by a buddy." and "Keep your whole body, head to feet, in frame."
 
@@ -273,7 +273,7 @@ The camera preview takes the left side of the screen, with the tracked skeleton 
 | Push-ups | Side on to the camera · In push-up position · Whole body in frame | "Move the phone back a little" / "Your feet are cut off." |
 | Sit-ups | Side on to the camera · Whole body in frame · Knees bent | "Bend your knees" / "Knees at about a right angle, feet flat." |
 
-The help line ends with "The timer starts by itself once everything is ticked." The joint that fails a check gets the pulsing `danger` ring. When every check passes, a 3-2-1 countdown starts and then the timer begins. "Start anyway" skips the remaining checks.
+The help line ends with "The timer starts by itself once everything is ticked." The joint that fails a check gets the pulsing `danger` ring. When every check passes, the phone says "3, 2, 1, go" out loud (with the numbers also shown on screen), and then the timer begins. If a check fails during the countdown, the countdown cancels and waits again. "Start anyway" skips the remaining checks.
 
 The knee angle threshold for "Knees bent" comes from the sit-up rule config in section 6.4 of the version 1 spec, not from a constant in the UI.
 
