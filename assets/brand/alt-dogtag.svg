@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="120" height="130" viewBox="0 0 120 130">
+  <title>Alternative mark (not shipped): dog tag</title>
+  <rect x="24" y="16" width="72" height="108" rx="26" fill="#E0B354"/>
+  <circle cx="60" cy="34" r="7" fill="#0B0D0A"/>
+  <text x="60" y="98" text-anchor="middle" font-family="Barlow Condensed, sans-serif" font-weight="700" font-size="44" fill="#0B0D0A">CB</text>
+</svg>

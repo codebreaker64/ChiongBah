@@ -75,7 +75,7 @@ export default function Log() {
                     onPress={() => { setOpen(expanded ? null : s.id); setConfirming(null); }}
                     style={styles.row}
                   >
-                    <Text testID="session-value" style={styles.value} maxFontSizeMultiplier={MAX_FONT_SCALE}>{value === null ? '—' : formatValue(s.station, value)}</Text>
+                    <Text testID="session-value" style={styles.value} numberOfLines={1} maxFontSizeMultiplier={MAX_FONT_SCALE}>{value === null ? '—' : formatValue(s.station, value)}</Text>
                     <View style={styles.rowText}>
                       <Text style={styles.station}>{STATION_LABEL[s.station]}</Text>
                       <Text style={styles.source}>{sourceDetail(s)}</Text>
@@ -116,7 +116,7 @@ const styles = StyleSheet.create({
   empty: { alignItems: 'center', gap: 20, paddingVertical: 40 },
   divider: { borderTopWidth: 1, borderTopColor: colors.border },
   row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, paddingHorizontal: 16, minHeight: 56 },
-  value: { width: 64, fontSize: 30, lineHeight: 32, fontFamily: fonts.display, color: colors.text, ...tabular },
+  value: { minWidth: 64, fontSize: 30, lineHeight: 32, fontFamily: fonts.display, color: colors.text, ...tabular },
   rowText: { flex: 1, gap: 2 },
   station: { fontFamily: fonts.medium, fontSize: 16, color: colors.text },
   source: { fontFamily: fonts.body, fontSize: 13, color: colors.muted },

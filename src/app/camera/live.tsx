@@ -17,7 +17,7 @@ import { FAULT_CUE, FAULT_SPOKEN, STATION_LABEL } from '@/ui/labels';
 import { DURATION, EASE, useMotionOK } from '@/ui/motion';
 import { colors, fonts } from '@/ui/theme';
 import { useAudioPlayer } from 'expo-audio';
-import { useKeepAwake } from 'expo-keep-awake';
+import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AccessibilityInfo, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
@@ -52,8 +52,14 @@ function cueFor(outcome: RepOutcome): Cue {
  * pops the number and ticks, and a no-count slides up a cue for 2.5 s. Without a pose model,
  * a tap on the preview counts a rep and a long press marks one that didn't count.
  */
+const WAKE_TAG = 'chiongbah-counting';
+
 export default function Counting() {
-  useKeepAwake();
+  // Keep the screen on for the whole set. Failures (e.g. the lock not granted yet) are not worth a crash.
+  useEffect(() => {
+    activateKeepAwakeAsync(WAKE_TAG).catch(() => {});
+    return () => { deactivateKeepAwake(WAKE_TAG).catch(() => {}); };
+  }, []);
   const repos = useRepositories();
   const { today, profile } = useAppData();
   const { station, setResult } = useCameraSession();
@@ -147,7 +153,8 @@ export default function Counting() {
     record({ index: repsRef.current.length, startMs: Math.max(0, t - 1000), endMs: t, outcome, metrics: {} });
   };
 
-  const previewWidth = width - PANEL + 24;
+  // The panel's rounded corners show the camera background, as on the canvas.
+  const previewWidth = Math.max(0, width - PANEL);
   return (
     <View style={styles.root}>
       <Pressable
@@ -168,13 +175,13 @@ export default function Counting() {
       </View>
 
       {!poseSource.available && reps.length === 0 ? (
-        <View style={[styles.hintWrap, { width: previewWidth - 24 }]} pointerEvents="none">
+        <View style={[styles.hintWrap, { width: previewWidth }]} pointerEvents="none">
           <Text style={styles.hint}>Tap the screen for each rep. Long press for one that didn&apos;t count.</Text>
         </View>
       ) : null}
 
       {cue ? (
-        <View style={[styles.cueWrap, { width: previewWidth - 24 }]} pointerEvents="none">
+        <View style={[styles.cueWrap, { width: previewWidth }]} pointerEvents="none">
           <Animated.View style={[styles.cue, cueStyle]}>
             <Icon name={cue.icon} size={20} color={colors.gold} strokeWidth={2.2} />
             <Text style={styles.cueText}>{cue.text}</Text>

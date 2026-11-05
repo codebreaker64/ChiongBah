@@ -81,7 +81,8 @@ export default function GetInFrame() {
   const help = failing?.problem ? `${PROBLEM_COPY[failing.problem].help} The timer starts by itself once everything is ticked.`
     : poseSource.available ? 'The timer starts by itself once everything is ticked.'
     : 'Body tracking is not in this version yet. Check the list yourself, then tap Start anyway.';
-  const previewWidth = width - PANEL + 24;
+  // The panel's rounded corners show the camera background, as on the canvas.
+  const previewWidth = Math.max(0, width - PANEL);
 
   return (
     <View style={styles.root}>
@@ -97,7 +98,7 @@ export default function GetInFrame() {
         <Pill>{`${STATION_LABEL[station]} · 1:00`}</Pill>
       </View>
       {count !== null ? (
-        <View style={[styles.countWrap, { width: previewWidth - 24 }]} pointerEvents="none">
+        <View style={[styles.countWrap, { width: previewWidth }]} pointerEvents="none">
           <Text style={styles.countText} maxFontSizeMultiplier={1}>{COUNT_WORDS[count]}</Text>
         </View>
       ) : null}

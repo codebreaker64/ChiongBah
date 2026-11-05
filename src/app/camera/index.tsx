@@ -30,7 +30,7 @@ export default function ChooseStation() {
   const [permission] = useCameraPermissions();
   const best = useMemo(() => repos.sessions.bestResults(), [repos]);
   // Screen padding 24 each side, figure padding 12 and border 1 each side.
-  const figureWidth = Math.min(useWindowDimensions().width, 480) - 48 - 26;
+  const figureWidth = Math.max(0, Math.min(useWindowDimensions().width, 480) - 48 - 26);
 
   const close = () => router.dismissTo('/');
   const next = () => router.push(permission?.granted ? '/camera/frame' : '/camera/access');

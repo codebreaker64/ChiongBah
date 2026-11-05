@@ -65,7 +65,7 @@ export default function Home() {
           </View>
           {total !== null && scored?.award ? (
             <View style={styles.awardCol}>
-              <Text style={styles.award}>{AWARD_LABEL[scored.award]}</Text>
+              <Text style={[styles.award, AWARD_LABEL[scored.award].length > 8 && styles.awardLong]} numberOfLines={2}>{AWARD_LABEL[scored.award]}</Text>
               {next ? (
                 <Press accessibilityRole="link" onPress={() => router.push('/goals')} hitSlop={10}>
                   <Text style={styles.toNext}>{`${plural(next.pointsToGo, 'point')} to ${AWARD_LABEL[next.award]}`}</Text>
@@ -155,12 +155,14 @@ const styles = StyleSheet.create({
   hero: { borderRadius: 18, padding: 18, gap: 14 },
   big: { fontSize: 26, fontFamily: fonts.displaySemi, color: colors.text },
   cardTitle: { fontFamily: fonts.semibold, fontSize: 15, color: colors.muted },
-  scoreRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' },
+  scoreRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', gap: 12 },
   scoreValue: { flexDirection: 'row', alignItems: 'baseline', gap: 4 },
   scoreNumber: { fontSize: 84, lineHeight: 84, fontFamily: fonts.display, color: colors.text, ...tabular },
   scoreMax: { fontSize: 26, fontFamily: fonts.displaySemi, color: colors.muted },
-  awardCol: { alignItems: 'flex-end', gap: 4, paddingBottom: 8 },
-  award: { fontSize: 30, lineHeight: 32, fontFamily: fonts.display, color: colors.accent },
+  awardCol: { flexShrink: 1, maxWidth: '50%', alignItems: 'flex-end', gap: 4, paddingBottom: 8 },
+  award: { fontSize: 30, lineHeight: 32, fontFamily: fonts.display, color: colors.accent, textAlign: 'right' },
+  /** 'Pass with Incentive' is too long for 30 px beside the score. */
+  awardLong: { fontSize: 22, lineHeight: 24 },
   toNext: { fontFamily: fonts.medium, fontSize: 14, color: colors.text, ...tabular },
   divider: { height: 1, backgroundColor: colors.border },
   station: { gap: 8 },

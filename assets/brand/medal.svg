@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="120" height="140" viewBox="0 0 120 140">
+  <title>Chiong Bah gold medal</title>
+  <polygon points="30,4 52,4 70,62 50,66" fill="#8FBF6A"/>
+  <polygon points="90,4 68,4 50,62 70,66" fill="#5E8A44"/>
+  <circle cx="60" cy="92" r="38" fill="#E0B354"/>
+  <circle cx="60" cy="92" r="30" fill="none" stroke="#B98C34" stroke-width="2.5"/>
+  <path d="M44 92 L60 76 L76 92 M44 106 L60 90 L76 106" fill="none" stroke="#0B0D0A" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
