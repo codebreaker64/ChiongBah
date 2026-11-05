@@ -17,12 +17,19 @@ export const HELP: DocSection[] = [
     ],
   },
   {
+    heading: 'How accurate is camera counting?',
+    body: [
+      'Camera counting is a practice aid, not an official count. It works best with the phone propped sideways on the floor about 2 m away, side on to you, in good light with your whole body in frame.',
+      'If the count looks off, fix it with the − and + buttons on the result screen before you save. Corrected counts are marked in your log.',
+    ],
+  },
+  {
     heading: 'How do I change my IPPT or ORD date?',
-    body: ['Open Settings, edit the date and tap Save. Home and Goals update straight away.'],
+    body: ['Open Settings and tap the date under Profile. Change it and tap Save. Home and Goals update straight away.'],
   },
   {
     heading: 'How do I fix a wrong result?',
-    body: ['Open Log, tap Delete under the result and confirm. Then add the correct one with Add result.'],
+    body: ['Open Log, tap the result, tap Delete and confirm. Then add the correct one with Add result.'],
   },
   {
     heading: 'Where is my data kept?',

@@ -9,6 +9,7 @@ import type { ScoringTable } from '@/domain/scoring/table';
 import * as tables from '@/domain/scoring/tables';
 import * as bootstrap from './bootstrap';
 import * as clock from './clock';
+import { splash } from './splash';
 
 export type TestAppOptions = {
   now?: string;
@@ -29,6 +30,7 @@ export function setupTestApp(opts: TestAppOptions = {}): Repositories {
   if (opts.goal) repos.goal.save(opts.goal, opts.now ?? '2026-10-21T02:00:00Z');
 
   jest.spyOn(bootstrap, 'createAppRepositories').mockReturnValue(repos);
+  jest.spyOn(splash, 'claim').mockReturnValue(false);
   jest.spyOn(clock, 'now').mockImplementation(() => new Date(opts.now ?? '2026-10-21T02:00:00Z'));
   jest.replaceProperty(tables, 'currentTable', opts.table === undefined ? miniTable : opts.table);
   return repos;

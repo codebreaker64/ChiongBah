@@ -98,6 +98,15 @@ export function sessionRepo(db: Db) {
       const rows = db.all<{ external_id: string }>('SELECT external_id FROM sessions WHERE source = ? AND external_id IS NOT NULL', [source]);
       return new Set(rows.map((r) => r.external_id));
     },
+    /** Best result per station from timed sources: most reps, or the fastest run. */
+    bestResults(): StationResults {
+      const placeholders = RESULT_SOURCES.map(() => '?').join(', ');
+      const best = (station: Station, expr: string) => db.get<{ v: number | null }>(
+        `SELECT ${expr} AS v FROM sessions WHERE station = ? AND source IN (${placeholders})`,
+        [station, ...RESULT_SOURCES],
+      )?.v ?? null;
+      return { pushup: best('pushup', 'MAX(valid_count)'), situp: best('situp', 'MAX(valid_count)'), run: best('run', 'MIN(run_time_s)') };
+    },
     latestResults(): StationResults {
       const placeholders = RESULT_SOURCES.map(() => '?').join(', ');
       const latest = (station: Station) => db.get<SessionRow>(
@@ -110,12 +119,25 @@ export function sessionRepo(db: Db) {
   };
 }
 
+/** When the user accepted the welcome disclaimers, kept in the meta table. */
+export function consentRepo(db: Db) {
+  return {
+    acceptedOn(): string | null {
+      return db.get<{ value: string }>("SELECT value FROM meta WHERE key = 'disclaimers_accepted_on'")?.value ?? null;
+    },
+    accept(on: string): void {
+      db.run("INSERT OR REPLACE INTO meta (key, value) VALUES ('disclaimers_accepted_on', ?)", [on]);
+    },
+  };
+}
+
 export type Repositories = {
+  consent: ReturnType<typeof consentRepo>;
   profile: ReturnType<typeof profileRepo>;
   goal: ReturnType<typeof goalRepo>;
   sessions: ReturnType<typeof sessionRepo>;
 };
 
 export function createRepositories(db: Db): Repositories {
-  return { profile: profileRepo(db), goal: goalRepo(db), sessions: sessionRepo(db) };
+  return { consent: consentRepo(db), profile: profileRepo(db), goal: goalRepo(db), sessions: sessionRepo(db) };
 }

@@ -1,67 +1,110 @@
-import { ReactNode } from 'react';
-import { Animated, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ReactNode, useState } from 'react';
+import {
+  Pressable, PressableProps, RefreshControl, ScrollView, StyleProp, StyleSheet, Text, TextInput, TextStyle, View, ViewStyle,
+} from 'react-native';
+import Animated, { useAnimatedStyle } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { SymbolView } from 'expo-symbols';
-import { useFillIn, usePressScale } from './motion';
+import { Icon, IconName } from './Icon';
+import { DURATION, useEnter } from './motion';
+import { colors, fonts, gap, layout, MAX_FONT_SCALE, radius, tabular, type } from './theme';
 
-/** Barlow Condensed for titles and figures (loaded in the root layout); body text stays the platform sans. */
-export const fonts = {
-  display: 'BarlowCondensed_700Bold',
-  displaySemi: 'BarlowCondensed_600SemiBold',
+export { colors, fonts } from './theme';
+
+/* ───────────────────────── Pressable with focus ring ───────────────────────── */
+
+type PressProps = Omit<PressableProps, 'style' | 'children'> & {
+  style?: StyleProp<ViewStyle> | ((s: { pressed: boolean }) => StyleProp<ViewStyle>);
+  children: ReactNode;
+  /** Corner radius of the focus ring, so it hugs the control. */
+  ringRadius?: number;
 };
 
-// Dark "tactical" theme: near-black olive surfaces, field green lightened to read on dark.
-export const colors = {
-  bg: '#0B0D0A',
-  card: '#161A14',
-  text: '#EEF1EA',
-  muted: '#9AA394',
-  border: '#2A3026',
-  accent: '#8FBF6A', // field green
-  accentText: '#0B0D0A',
-  danger: '#FF6B5E',
-  chipBg: '#232920',
-  placeholder: '#9AA394',
-};
-
-/** Scrolling page. Pass onRefresh to allow pull to refresh. */
-export function Screen({ children, onRefresh }: { children: ReactNode; onRefresh?: () => void }) {
+/**
+ * Pressable with the app's states (spec section 4.4): 0.85 opacity while pressed, 0.4 and not
+ * focusable when disabled, and a 2 px accent ring 2 px outside the control when focused from a
+ * keyboard or switch access.
+ */
+export function Press({ style, children, disabled, ringRadius = radius.row, onFocus, onBlur, ...rest }: PressProps) {
+  const [focused, setFocused] = useState(false);
   return (
-    <SafeAreaView style={styles.safe} edges={['top']}>
+    <Pressable
+      {...rest}
+      disabled={disabled}
+      focusable={!disabled}
+      accessibilityState={{ ...rest.accessibilityState, disabled: !!disabled }}
+      onFocus={(e) => { setFocused(true); onFocus?.(e); }}
+      onBlur={(e) => { setFocused(false); onBlur?.(e); }}
+      style={({ pressed }) => [
+        typeof style === 'function' ? style({ pressed }) : style,
+        pressed && !disabled && { opacity: 0.85 },
+        disabled && { opacity: 0.4 },
+      ]}
+    >
+      {children}
+      {focused ? <View pointerEvents="none" style={[styles.ring, { borderRadius: ringRadius + 4 }]} /> : null}
+    </Pressable>
+  );
+}
+
+/* ───────────────────────── Screens ───────────────────────── */
+
+type ScreenProps = {
+  children: ReactNode;
+  onRefresh?: () => void;
+  /** Pinned to the bottom of the screen, below the scrolling content. */
+  footer?: ReactNode;
+  /** 'tab' screens use 20 px sides; full screens and sheets use 24. */
+  variant?: 'tab' | 'full' | 'sheet';
+  gap?: number;
+};
+
+/** A scrolling page on the app background. Content and footer share one scroll so nothing clips at large text sizes. */
+export function Screen({ children, onRefresh, footer, variant = 'full', gap: g = 14 }: ScreenProps) {
+  const pad = variant === 'tab' ? { paddingHorizontal: 20, paddingTop: 24, paddingBottom: 16 }
+    : variant === 'sheet' ? { paddingHorizontal: layout.side, paddingTop: 32, paddingBottom: layout.bottom }
+    : { paddingHorizontal: layout.side, paddingTop: 24, paddingBottom: layout.bottom };
+  return (
+    <SafeAreaView style={styles.safe} edges={variant === 'sheet' ? ['bottom'] : ['top', 'bottom']}>
       <ScrollView
-        contentContainerStyle={styles.screen}
+        contentContainerStyle={[styles.scroll, pad]}
         keyboardShouldPersistTaps="handled"
-        refreshControl={onRefresh ? <RefreshControl refreshing={false} onRefresh={onRefresh} tintColor={colors.accent} colors={[colors.accent]} progressBackgroundColor={colors.card} /> : undefined}
+        refreshControl={onRefresh ? <RefreshControl refreshing={false} onRefresh={onRefresh} tintColor={colors.accent} colors={[colors.accent]} progressBackgroundColor={colors.surface} /> : undefined}
       >
-        {children}
+        <View style={{ gap: g }}>{children}</View>
+        {footer ? <View style={styles.footer}>{footer}</View> : null}
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-export function Title({ children }: { children: ReactNode }) {
-  return <Text style={styles.title} accessibilityRole="header">{children}</Text>;
+/** Grab handle at the top of a modal sheet. */
+export function SheetHandle() {
+  return <View style={styles.handle} />;
 }
 
-export function Body({ children, muted }: { children: ReactNode; muted?: boolean }) {
-  return <Text style={[styles.body, muted && styles.muted]}>{children}</Text>;
+/* ───────────────────────── Text ───────────────────────── */
+
+export function Title({ children, size = 34 }: { children: ReactNode; size?: number }) {
+  return <Text style={[type.screenTitle, { fontSize: size, lineHeight: size * 1.06 }]} accessibilityRole="header" maxFontSizeMultiplier={MAX_FONT_SCALE}>{children}</Text>;
 }
 
-export function Card({ children }: { children: ReactNode }) {
-  return <View style={styles.card}>{children}</View>;
+export function Body({ children, muted, small, style }: { children: ReactNode; muted?: boolean; small?: boolean; style?: StyleProp<TextStyle> }) {
+  return <Text style={[small ? type.bodySmall : type.body, muted && styles.muted, style]}>{children}</Text>;
 }
 
-/** Outlined pill for a screen's main action, placed beside the title. */
-export function HeaderAction({ label, onPress }: { label: string; onPress: () => void }) {
-  const press = usePressScale();
-  return (
-    <Pressable accessibilityRole="button" onPress={onPress} onPressIn={press.onPressIn} onPressOut={press.onPressOut}>
-      <Animated.View style={[styles.headerAction, { transform: [{ scale: press.scale }] }]}>
-        <SymbolView name={{ ios: 'plus', android: 'add', web: 'add' }} tintColor={colors.accent} size={18} />
-        <Text style={styles.headerActionText}>{label}</Text>
-      </Animated.View>
-    </Pressable>
-  );
+export function Caption({ children, italic, style }: { children: ReactNode; italic?: boolean; style?: StyleProp<TextStyle> }) {
+  return <Text style={[type.caption, italic && { fontStyle: 'italic' }, style]}>{children}</Text>;
+}
+
+/** Heading above a group of rows, e.g. 'Support'. */
+export function SectionTitle({ children }: { children: string }) {
+  return <Text style={styles.section} accessibilityRole="header">{children}</Text>;
+}
+
+/* ───────────────────────── Containers ───────────────────────── */
+
+export function Card({ children, style, padded = true }: { children: ReactNode; style?: StyleProp<ViewStyle>; padded?: boolean }) {
+  return <View style={[styles.card, padded && styles.cardPad, style]}>{children}</View>;
 }
 
 /** Title on the left, optional action on the right. */
@@ -74,80 +117,215 @@ export function Header({ title, action }: { title: string; action?: ReactNode })
   );
 }
 
-/** Heading for a group of content on a screen, e.g. 'Support' above a card. */
-export function SectionTitle({ children }: { children: string }) {
-  return <Text style={styles.section} accessibilityRole="header">{children}</Text>;
-}
-
-/** Thin bar showing value out of max, e.g. station points out of the station's maximum. */
-export function ProgressBar({ value, max }: { value: number; max: number }) {
-  const pct = Math.max(0, Math.min(1, value / max)) * 100;
-  const fill = useFillIn();
-  const width = fill.interpolate({ inputRange: [0, 1], outputRange: ['0%', `${pct}%`] });
+/** Outlined pill for a screen's main action, beside the title ('Add result'). */
+export function HeaderAction({ label, onPress }: { label: string; onPress: () => void }) {
   return (
-    <View style={styles.track}>
-      <Animated.View style={[styles.fill, { width }]} />
-    </View>
+    <Press accessibilityRole="button" onPress={onPress} ringRadius={22} hitSlop={4} style={styles.headerAction}>
+      <Icon name="plus" size={18} color={colors.accent} strokeWidth={2.4} />
+      <Text style={styles.headerActionText}>{label}</Text>
+    </Press>
   );
 }
 
-export function Button({ label, onPress, secondary }: { label: string; onPress: () => void; secondary?: boolean }) {
-  const press = usePressScale();
-  return (
-    <Pressable accessibilityRole="button" onPress={onPress} onPressIn={press.onPressIn} onPressOut={press.onPressOut}>
-      <Animated.View style={[styles.button, secondary && styles.buttonSecondary, { transform: [{ scale: press.scale }] }]}>
-        <Text style={[styles.buttonText, secondary && styles.buttonTextSecondary]}>{label}</Text>
-      </Animated.View>
-    </Pressable>
-  );
-}
+/* ───────────────────────── Buttons ───────────────────────── */
 
-export function Chip({ label, selected, onPress }: { label: string; selected: boolean; onPress: () => void }) {
-  const press = usePressScale();
+type ButtonVariant = 'primary' | 'secondary' | 'tertiary' | 'text' | 'danger';
+
+export function Button({ label, onPress, variant, secondary, disabled, icon, accessibilityHint }: {
+  label: string;
+  onPress: () => void;
+  variant?: ButtonVariant;
+  /** Shorthand for variant 'secondary'. */
+  secondary?: boolean;
+  disabled?: boolean;
+  icon?: IconName;
+  accessibilityHint?: string;
+}) {
+  const v: ButtonVariant = variant ?? (secondary ? 'secondary' : 'primary');
+  const textColor = v === 'primary' || v === 'danger' ? colors.bg : v === 'tertiary' ? colors.text : colors.accent;
   return (
-    <Pressable
-      accessibilityRole="radio"
-      accessibilityState={{ selected }}
+    <Press
+      accessibilityRole="button"
+      accessibilityHint={accessibilityHint}
       onPress={onPress}
-      onPressIn={press.onPressIn}
-      onPressOut={press.onPressOut}
+      disabled={disabled}
+      style={[styles.button, BUTTON[v]]}
     >
-      <Animated.View style={[styles.chip, selected && styles.chipSelected, { transform: [{ scale: press.scale }] }]}>
-        <Text style={[styles.chipText, selected && styles.chipTextSelected]}>{label}</Text>
-      </Animated.View>
-    </Pressable>
+      {icon ? <Icon name={icon} size={16} color={textColor} /> : null}
+      <Text style={[v === 'primary' || v === 'danger' ? styles.buttonTextPrimary : styles.buttonText, { color: textColor }]} maxFontSizeMultiplier={MAX_FONT_SCALE}>
+        {label}
+      </Text>
+    </Press>
   );
 }
 
-/** A large single-choice option with a title and a one-line explanation. */
-export function ChoiceCard({ title, detail, selected, onPress }: { title: string; detail?: string; selected: boolean; onPress: () => void }) {
-  const press = usePressScale();
+const BUTTON: Record<ButtonVariant, ViewStyle> = {
+  primary: { height: layout.primaryHeight, backgroundColor: colors.accent },
+  danger: { height: layout.primaryHeight, backgroundColor: colors.danger },
+  secondary: { height: layout.secondaryHeight, borderWidth: 1, borderColor: colors.accent },
+  tertiary: { height: layout.secondaryHeight, borderWidth: 1, borderColor: colors.border },
+  text: { height: layout.secondaryHeight },
+};
+
+/** Round icon-only button (close, back, ± steppers). Always labelled for screen readers. */
+export function IconButton({ icon, label, onPress, variant = 'plain', size = 44, iconSize = 24, strokeWidth }: {
+  icon: IconName;
+  label: string;
+  onPress: () => void;
+  variant?: 'plain' | 'scrim' | 'outline';
+  size?: number;
+  iconSize?: number;
+  strokeWidth?: number;
+}) {
   return (
-    <Pressable accessibilityRole="radio" accessibilityState={{ selected }} onPress={onPress} onPressIn={press.onPressIn} onPressOut={press.onPressOut}>
-      <Animated.View style={[styles.choice, selected && styles.choiceSelected, { transform: [{ scale: press.scale }] }]}>
-        <View style={styles.choiceText}>
-          <Text style={styles.choiceTitle}>{title}</Text>
-          {detail ? <Text style={styles.choiceDetail}>{detail}</Text> : null}
-        </View>
-        <View style={[styles.radio, selected && styles.radioSelected]}>{selected ? <View style={styles.radioDot} /> : null}</View>
-      </Animated.View>
-    </Pressable>
+    <Press
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      onPress={onPress}
+      ringRadius={size / 2}
+      style={[
+        { width: Math.max(size, layout.touch), height: Math.max(size, layout.touch), borderRadius: size / 2, alignItems: 'center', justifyContent: 'center' },
+        variant === 'plain' && { alignItems: 'flex-start' },
+        variant === 'scrim' && { backgroundColor: colors.scrim },
+        variant === 'outline' && { borderWidth: 1, borderColor: colors.border, backgroundColor: colors.bg },
+      ]}
+    >
+      <Icon name={icon} size={iconSize} color={colors.text} strokeWidth={strokeWidth} />
+    </Press>
   );
 }
 
-/** A tappable settings-style row: label on the left, chevron on the right. */
-export function ListRow({ label, onPress, first }: { label: string; onPress: () => void; first?: boolean }) {
+/* ───────────────────────── Choices ───────────────────────── */
+
+/** Rounded chip in a segmented row. */
+export function Chip({ label, selected, onPress, height = 40 }: { label: string; selected: boolean; onPress: () => void; height?: number }) {
   return (
-    <Pressable accessibilityRole="link" onPress={onPress} style={({ pressed }) => [styles.listRow, !first && styles.listDivider, pressed && { opacity: 0.7 }]}>
-      <Text style={styles.listLabel}>{label}</Text>
-      <SymbolView name={{ ios: 'chevron.right', android: 'chevron_right', web: 'chevron_right' }} tintColor={colors.muted} size={20} />
-    </Pressable>
+    <Press
+      accessibilityRole="radio"
+      accessibilityState={{ selected, checked: selected }}
+      onPress={onPress}
+      ringRadius={height / 2}
+      hitSlop={(layout.touch - height) / 2 > 0 ? (layout.touch - height) / 2 : 0}
+      style={[styles.chip, { height, borderRadius: height / 2 }, selected && styles.chipSelected]}
+    >
+      <Text style={[styles.chipText, selected && styles.chipTextSelected]}>{label}</Text>
+    </Press>
   );
 }
 
 export function ChipRow({ children }: { children: ReactNode }) {
-  return <View style={styles.chipRow}>{children}</View>;
+  return <View style={styles.chipRow} accessibilityRole="radiogroup">{children}</View>;
 }
+
+/** A large single-choice option with a title and a one-line explanation. */
+export function ChoiceCard({ title, detail, selected, onPress }: { title: string; detail?: string; selected: boolean; onPress: () => void }) {
+  return (
+    <Press
+      accessibilityRole="radio"
+      accessibilityState={{ selected, checked: selected }}
+      onPress={onPress}
+      style={[styles.choice, selected && styles.choiceSelected]}
+    >
+      <View style={styles.choiceText}>
+        <Text style={styles.choiceTitle}>{title}</Text>
+        {detail ? <Text style={styles.choiceDetail}>{detail}</Text> : null}
+      </View>
+      <View style={[styles.radio, selected && styles.radioSelected]}>{selected ? <View style={styles.radioDot} /> : null}</View>
+    </Press>
+  );
+}
+
+/* ───────────────────────── Rows ───────────────────────── */
+
+/** Tappable row in a grouped card: label, optional value, chevron. */
+export function ListRow({ label, value, valueTone = 'muted', onPress, first, icon, detail, accessibilityHint }: {
+  label: string;
+  value?: ReactNode;
+  valueTone?: 'muted' | 'accent';
+  onPress: () => void;
+  first?: boolean;
+  icon?: IconName;
+  detail?: string;
+  accessibilityHint?: string;
+}) {
+  return (
+    <Press accessibilityRole="button" accessibilityHint={accessibilityHint} onPress={onPress} ringRadius={radius.row} style={[styles.listRow, !first && styles.listDivider]}>
+      {icon ? <Icon name={icon} size={22} color={colors.accent} /> : null}
+      <View style={{ flex: 1, gap: 2 }}>
+        <Text style={styles.listLabel}>{label}</Text>
+        {detail ? <Text style={type.caption}>{detail}</Text> : null}
+      </View>
+      {typeof value === 'string' ? <Text style={[styles.listValue, valueTone === 'accent' && { color: colors.accent }]}>{value}</Text> : value}
+      <Icon name="chevron" size={20} color={colors.muted} />
+    </Press>
+  );
+}
+
+/** A group of rows on one card. */
+export function RowGroup({ children }: { children: ReactNode }) {
+  return <View style={styles.rowGroup}>{children}</View>;
+}
+
+/** Big number with a short label, e.g. '22' / 'years old'. Used for live readouts. */
+export function Readout({ value, label, detail, accessibilityLabel }: { value: string; label: string; detail?: string; accessibilityLabel?: string }) {
+  return (
+    <View style={styles.readout} accessible accessibilityLabel={accessibilityLabel ?? `${value} ${label}${detail ? `. ${detail}` : ''}`} accessibilityLiveRegion="polite">
+      <Text style={styles.readoutValue} maxFontSizeMultiplier={MAX_FONT_SCALE}>{value}</Text>
+      <View style={{ flex: 1, gap: 2 }}>
+        <Text style={styles.readoutLabel}>{label}</Text>
+        {detail ? <Text style={styles.readoutDetail}>{detail}</Text> : null}
+      </View>
+    </View>
+  );
+}
+
+/** A line with a leading icon: tips, notes and disclaimers. */
+export function IconLine({ icon, children, tone = 'accent', boxed, small }: { icon: IconName; children: ReactNode; tone?: 'accent' | 'muted'; boxed?: boolean; small?: boolean }) {
+  const color = tone === 'accent' ? colors.accent : colors.muted;
+  return (
+    <View style={[styles.iconLine, boxed && styles.iconLineBoxed]}>
+      <View style={{ marginTop: 1 }}><Icon name={icon} size={20} color={color} strokeWidth={icon === 'check' ? 2.4 : 2} /></View>
+      <Text style={[small ? type.caption : type.bodySmall, { flex: 1 }, tone === 'muted' && !small && styles.muted, small && { fontSize: 14, lineHeight: 20 }]}>{children}</Text>
+    </View>
+  );
+}
+
+/* ───────────────────────── Progress ───────────────────────── */
+
+/**
+ * Thin bar showing `value` out of `max`. It fills from the left (scaleX) when it appears;
+ * `from` (0–1 of the final width) starts it part-way, e.g. from the previous onboarding step.
+ */
+export function ProgressBar({ value, max, height = 6, from = 0, delay = 0, duration = DURATION.fill, accessibilityLabel }: {
+  value: number;
+  max: number;
+  height?: number;
+  from?: number;
+  delay?: number;
+  duration?: number;
+  accessibilityLabel?: string;
+}) {
+  const fraction = Math.max(0, Math.min(1, max > 0 ? value / max : 0));
+  const t = useEnter({ duration, delay, from, key: fraction });
+  const [width, setWidth] = useState(0);
+  const fillWidth = width * fraction;
+  // Scale about the left edge: shift by half the lost width so the bar grows rightwards.
+  const style = useAnimatedStyle(() => ({ transform: [{ translateX: -(fillWidth * (1 - t.value)) / 2 }, { scaleX: t.value }] }));
+  return (
+    <View
+      style={[styles.track, { height, borderRadius: height / 2 }]}
+      onLayout={(e) => setWidth(e.nativeEvent.layout.width)}
+      accessible={!!accessibilityLabel}
+      accessibilityRole={accessibilityLabel ? 'progressbar' : undefined}
+      accessibilityLabel={accessibilityLabel}
+      accessibilityValue={accessibilityLabel ? { min: 0, max: 100, now: Math.round(fraction * 100) } : undefined}
+    >
+      <Animated.View style={[{ width: fillWidth, height, borderRadius: height / 2, backgroundColor: colors.accent }, style]} />
+    </View>
+  );
+}
+
+/* ───────────────────────── Inputs ───────────────────────── */
 
 export function Field(props: {
   label: string;
@@ -156,62 +334,80 @@ export function Field(props: {
   error?: string;
   placeholder?: string;
   keyboardType?: 'default' | 'number-pad' | 'numbers-and-punctuation';
+  onSubmitEditing?: () => void;
 }) {
+  const [focused, setFocused] = useState(false);
   return (
     <View style={styles.field}>
-      <Text style={styles.label}>{props.label}</Text>
+      <Text style={type.label}>{props.label}</Text>
       <TextInput
         accessibilityLabel={props.label}
         value={props.value}
         onChangeText={props.onChangeText}
+        onSubmitEditing={props.onSubmitEditing}
         placeholder={props.placeholder}
-        placeholderTextColor={colors.placeholder}
+        placeholderTextColor={colors.muted}
         keyboardType={props.keyboardType ?? 'default'}
         autoCapitalize="none"
         autoCorrect={false}
-        style={[styles.input, props.error ? styles.inputError : null]}
+        selectionColor={colors.accent}
+        cursorColor={colors.accent}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
+        maxFontSizeMultiplier={MAX_FONT_SCALE}
+        style={[styles.input, focused && styles.inputFocused, props.error ? styles.inputError : null]}
       />
-      {props.error ? <Text style={styles.error}>{props.error}</Text> : null}
+      {props.error ? (
+        <Text style={styles.error} accessibilityLiveRegion="polite">{props.error}</Text>
+      ) : null}
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+export const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bg },
-  screen: { padding: 16, gap: 12 },
-  title: { fontSize: 32, fontFamily: fonts.display, color: colors.text, letterSpacing: 0.2 },
-  choice: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: colors.card, borderRadius: 12, borderWidth: 1, borderColor: colors.border, padding: 16, minHeight: 64 },
-  choiceSelected: { borderColor: colors.accent, backgroundColor: colors.chipBg },
-  choiceText: { flex: 1, gap: 2 },
-  choiceTitle: { fontSize: 17, fontWeight: '600', color: colors.text },
-  choiceDetail: { fontSize: 14, color: colors.muted },
+  scroll: { flexGrow: 1 },
+  footer: { marginTop: 'auto', paddingTop: 24, gap: gap.s },
+  handle: { width: 40, height: 5, borderRadius: 3, backgroundColor: colors.border, alignSelf: 'center', marginBottom: 6 },
+  ring: { position: 'absolute', top: -4, left: -4, right: -4, bottom: -4, borderWidth: 2, borderColor: colors.accent },
+  muted: { color: colors.muted },
+  section: { fontFamily: fonts.semibold, fontSize: 15, color: colors.muted, marginTop: 6 },
+  card: { backgroundColor: colors.surface, borderRadius: radius.card, borderWidth: 1, borderColor: colors.border },
+  cardPad: { padding: 16, gap: gap.m },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', minHeight: 44 },
+  headerAction: { flexDirection: 'row', alignItems: 'center', gap: 6, height: 40, paddingHorizontal: 14, borderRadius: 20, borderWidth: 1, borderColor: colors.accent },
+  headerActionText: { fontFamily: fonts.semibold, color: colors.accent, fontSize: 15 },
+  button: { borderRadius: radius.row, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 8, paddingHorizontal: 16 },
+  buttonTextPrimary: { fontFamily: fonts.semibold, fontSize: 17 },
+  buttonText: { fontFamily: fonts.semibold, fontSize: 16 },
+  chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: gap.xs },
+  chip: { paddingHorizontal: 16, backgroundColor: colors.chip, alignItems: 'center', justifyContent: 'center' },
+  chipSelected: { backgroundColor: colors.accent },
+  chipText: { fontFamily: fonts.body, color: colors.text, fontSize: 15 },
+  chipTextSelected: { fontFamily: fonts.semibold, color: colors.bg },
+  choice: { flexDirection: 'row', alignItems: 'center', gap: gap.m, backgroundColor: colors.surface, borderRadius: radius.row, borderWidth: 1, borderColor: colors.border, padding: 16, minHeight: 64 },
+  choiceSelected: { borderColor: colors.accent, backgroundColor: colors.surfaceSelected },
+  choiceText: { flex: 1, gap: 4 },
+  choiceTitle: { fontFamily: fonts.semibold, fontSize: 17, color: colors.text },
+  choiceDetail: { fontFamily: fonts.body, fontSize: 14, color: colors.muted },
   radio: { width: 22, height: 22, borderRadius: 11, borderWidth: 2, borderColor: colors.muted, alignItems: 'center', justifyContent: 'center' },
   radioSelected: { borderColor: colors.accent },
   radioDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: colors.accent },
-  listRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 14, minHeight: 48 },
-  listDivider: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border },
-  listLabel: { fontSize: 16, color: colors.text },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', minHeight: 44 },
-  headerAction: { flexDirection: 'row', alignItems: 'center', gap: 4, borderWidth: 1, borderColor: colors.accent, borderRadius: 999, paddingVertical: 8, paddingLeft: 10, paddingRight: 14, minHeight: 44 },
-  headerActionText: { color: colors.accent, fontSize: 15, fontWeight: '600' },
-  section: { fontSize: 17, fontWeight: '600', color: colors.text, marginTop: 12 },
-  track: { height: 4, borderRadius: 2, backgroundColor: colors.border, overflow: 'hidden' },
-  fill: { height: 4, borderRadius: 2, backgroundColor: colors.accent },
-  body: { fontSize: 16, lineHeight: 22, color: colors.text },
-  muted: { color: colors.muted },
-  card: { backgroundColor: colors.card, borderRadius: 12, padding: 16, gap: 8, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border },
-  button: { backgroundColor: colors.accent, borderRadius: 10, paddingVertical: 12, paddingHorizontal: 16, alignItems: 'center' },
-  buttonSecondary: { backgroundColor: 'transparent', borderWidth: 1, borderColor: colors.accent },
-  buttonText: { color: colors.accentText, fontSize: 16, fontWeight: '600' },
-  buttonTextSecondary: { color: colors.accent },
-  chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  chip: { paddingVertical: 8, paddingHorizontal: 14, borderRadius: 999, backgroundColor: colors.chipBg },
-  chipSelected: { backgroundColor: colors.accent },
-  chipText: { color: colors.text, fontSize: 15 },
-  chipTextSelected: { color: colors.accentText, fontWeight: '600' },
-  field: { gap: 4 },
-  label: { fontSize: 14, color: colors.muted },
-  input: { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, borderRadius: 8, padding: 10, fontSize: 16, color: colors.text },
+  rowGroup: { backgroundColor: colors.surface, borderRadius: radius.row, borderWidth: 1, borderColor: colors.border, overflow: 'hidden' },
+  listRow: { flexDirection: 'row', alignItems: 'center', gap: gap.m, minHeight: 48, paddingHorizontal: 16, paddingVertical: 12 },
+  listDivider: { borderTopWidth: 1, borderTopColor: colors.border },
+  listLabel: { fontFamily: fonts.medium, fontSize: 15, color: colors.text },
+  listValue: { fontFamily: fonts.body, fontSize: 15, color: colors.muted, ...tabular },
+  readout: { flexDirection: 'row', alignItems: 'center', gap: gap.m, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: radius.row, paddingVertical: 14, paddingHorizontal: 16 },
+  readoutValue: { fontFamily: fonts.display, fontSize: 36, lineHeight: 38, color: colors.accent, ...tabular },
+  readoutLabel: { fontFamily: fonts.medium, fontSize: 15, color: colors.text },
+  readoutDetail: { fontFamily: fonts.body, fontSize: 14, color: colors.muted },
+  iconLine: { flexDirection: 'row', gap: gap.s, alignItems: 'flex-start' },
+  iconLineBoxed: { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: radius.row, paddingVertical: 12, paddingHorizontal: 14 },
+  track: { backgroundColor: colors.chip, overflow: 'hidden' },
+  field: { gap: 8 },
+  input: { height: 52, paddingHorizontal: 16, borderRadius: radius.field, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, color: colors.text, fontFamily: fonts.body, fontSize: 17, ...tabular },
+  inputFocused: { borderColor: colors.accent },
   inputError: { borderColor: colors.danger },
-  error: { color: colors.danger, fontSize: 14 },
+  error: { fontFamily: fonts.body, color: colors.danger, fontSize: 14 },
 });

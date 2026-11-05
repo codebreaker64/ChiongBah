@@ -1,5 +1,5 @@
 /** A running session as a health source reports it. */
-export type ExternalRun = { id: string; startedAt: string; distanceM: number; durationS: number };
+export type ExternalRun = { id: string; startedAt: string; distanceM: number; durationS: number; /** App that recorded it, e.g. 'Strava', when known. */ sourceApp?: string };
 
 /** A run ready to save as a 2.4km result. */
 export type RunCandidate = ExternalRun & { runTimeS: number; adjusted: boolean };

@@ -11,9 +11,10 @@ afterEach(() => jest.restoreAllMocks());
 
 const fakeHealth = (granted: boolean) => {
   jest.spyOn(healthImporter, 'isAvailable').mockResolvedValue(true);
+  jest.spyOn(healthImporter, 'hasAccess').mockResolvedValue(false);
   jest.spyOn(healthImporter, 'requestAccess').mockResolvedValue(granted);
   jest.spyOn(healthImporter, 'runsSince').mockResolvedValue([
-    { id: 'hc-1', startedAt: '2026-10-15T23:00:00Z', distanceM: 2500, durationS: 625 },
+    { id: 'hc-1', startedAt: '2026-10-15T23:00:00Z', distanceM: 2500, durationS: 625, sourceApp: 'Strava' },
     { id: 'hc-2', startedAt: '2026-10-12T23:00:00Z', distanceM: 5000, durationS: 1500 },
     { id: 'hc-old', startedAt: '2026-10-05T23:00:00Z', distanceM: 2400, durationS: 640 },
   ]);
@@ -31,11 +32,13 @@ test('connect lists 2.4km candidates and imports one as an adjusted run', async 
   const repos = setupTestApp({ now: NOW, profile: P, sessions: [already] });
   await renderRouter(APP, { initialUrl: '/log/import' });
   await fireEvent.press(await screen.findByText('Connect Health Connect'));
-  expect(await screen.findByText('2.50 km in 10:25')).toBeTruthy();
+  expect(await screen.findByText('16 Oct · 2.50 km in 10:25 · Strava')).toBeTruthy();
+  expect(screen.getByText('10:00')).toBeTruthy();
   expect(screen.queryByText(/5\.00 km/)).toBeNull();
   expect(screen.getAllByText('Import')).toHaveLength(1);
   await fireEvent.press(screen.getByText('Import'));
   expect(await screen.findByText('Imported 1 run.')).toBeTruthy();
+  expect(screen.getByText('Imported')).toBeTruthy();
   expect(repos.sessions.list()[0]).toMatchObject({ source: 'health_connect', runTimeS: 600, runDistanceM: 2500, adjusted: true, externalId: 'hc-1' });
 });
 

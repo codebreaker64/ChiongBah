@@ -70,7 +70,14 @@ test('full results show total, award and practice label', async () => {
   ] });
   expect(await screen.findByLabelText('Total 82/100')).toBeTruthy();
   expect(screen.getByText('Silver')).toBeTruthy();
-  expect(screen.getByText('Practice estimate')).toBeTruthy();
+  expect(screen.getByText('3 points to Gold')).toBeTruthy();
+  expect(screen.getByText('Practice estimate · age group 0 to 21')).toBeTruthy();
+});
+
+test('the camera card opens Count with camera', async () => {
+  await home({ profile: P });
+  await fireEvent.press(await screen.findByText('Count reps with camera'));
+  expect(await screen.findByText('Count with camera')).toBeTruthy();
 });
 
 test('header action opens the add result form', async () => {
@@ -94,8 +101,9 @@ test('deleting the newest push-up result falls back to the previous one on Home'
   await home({ profile: P, sessions: [manualSession('pushup', '2026-10-01T10:00:00Z', 30), manualSession('pushup', '2026-10-10T10:00:00Z', 35)] });
   expect(await screen.findByText('35 reps')).toBeTruthy();
   await fireEvent.press(screen.getByText('Log'));
-  const deletes = await screen.findAllByText('Delete');
-  await fireEvent.press(deletes[0]); // newest first
+  const rows = await screen.findAllByTestId('session-value');
+  await fireEvent.press(rows[0]); // newest first
+  await fireEvent.press(screen.getByText('Delete'));
   await fireEvent.press(screen.getByText('Yes, delete'));
   await fireEvent.press(screen.getByText('Home'));
   expect(await screen.findByText('30 reps')).toBeTruthy();

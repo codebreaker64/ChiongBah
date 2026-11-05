@@ -1,12 +1,12 @@
 import { useRepositories } from '@/app-state/RepositoriesContext';
-import { colors } from '@/ui/kit';
+import { Icon, IconName } from '@/ui/Icon';
+import { colors, fonts } from '@/ui/theme';
 import { Redirect, Tabs } from 'expo-router';
-import { SymbolView, SymbolViewProps } from 'expo-symbols';
 import type { ColorValue } from 'react-native';
 
-function TabIcon({ name, color }: { name: SymbolViewProps['name']; color: ColorValue }) {
-  return <SymbolView name={name} tintColor={color} size={24} />;
-}
+const icon = (name: IconName) => function TabIcon({ color }: { color: ColorValue }) {
+  return <Icon name={name} color={color} size={24} />;
+};
 
 export default function TabsLayout() {
   const repos = useRepositories();
@@ -17,14 +17,15 @@ export default function TabsLayout() {
         headerShown: false,
         tabBarActiveTintColor: colors.accent,
         tabBarInactiveTintColor: colors.muted,
-        tabBarStyle: { backgroundColor: colors.card, borderTopColor: colors.border },
+        tabBarStyle: { backgroundColor: colors.surface, borderTopColor: colors.border, borderTopWidth: 1, height: 76, paddingTop: 10 },
+        tabBarLabelStyle: { fontFamily: fonts.medium, fontSize: 12 },
         sceneStyle: { backgroundColor: colors.bg },
       }}
     >
-      <Tabs.Screen name="index" options={{ title: 'Home', tabBarIcon: ({ color }) => <TabIcon name={{ ios: 'house', android: 'home', web: 'home' }} color={color} /> }} />
-      <Tabs.Screen name="log" options={{ title: 'Log', tabBarIcon: ({ color }) => <TabIcon name={{ ios: 'list.bullet', android: 'history', web: 'history' }} color={color} /> }} />
-      <Tabs.Screen name="goals" options={{ title: 'Goals', tabBarIcon: ({ color }) => <TabIcon name={{ ios: 'flag', android: 'flag', web: 'flag' }} color={color} /> }} />
-      <Tabs.Screen name="settings" options={{ title: 'Settings', tabBarIcon: ({ color }) => <TabIcon name={{ ios: 'gearshape', android: 'settings', web: 'settings' }} color={color} /> }} />
+      <Tabs.Screen name="index" options={{ title: 'Home', tabBarIcon: icon('home') }} />
+      <Tabs.Screen name="log" options={{ title: 'Log', tabBarIcon: icon('log') }} />
+      <Tabs.Screen name="goals" options={{ title: 'Goals', tabBarIcon: icon('goals') }} />
+      <Tabs.Screen name="settings" options={{ title: 'Settings', tabBarIcon: icon('settings') }} />
     </Tabs>
   );
 }

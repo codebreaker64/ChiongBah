@@ -17,6 +17,18 @@ const PERMISSIONS = [
   { accessType: 'read', recordType: 'Distance' },
 ] as const;
 
+/** Friendly names for the apps that most often write runs to Health Connect. */
+const APP_NAMES: Record<string, string> = {
+  'com.strava': 'Strava',
+  'com.fitbit.FitbitMobile': 'Fitbit',
+  'com.sec.android.app.shealth': 'Samsung Health',
+  'com.google.android.apps.fitness': 'Google Fit',
+  'com.garmin.android.apps.connectmobile': 'Garmin Connect',
+  'com.nike.plusgps': 'Nike Run Club',
+  'com.huawei.health': 'Huawei Health',
+  'com.coros.coros': 'COROS',
+};
+
 const RUN_TYPES = new Set<number>([ExerciseType.RUNNING, ExerciseType.RUNNING_TREADMILL]);
 
 let ready: Promise<boolean> | null = null;
@@ -30,6 +42,15 @@ export const healthImporter: HealthImporter = {
   async isAvailable() {
     try {
       return (await getSdkStatus()) === SdkAvailabilityStatus.SDK_AVAILABLE;
+    } catch {
+      return false;
+    }
+  },
+
+  async hasAccess() {
+    try {
+      if ((await getSdkStatus()) !== SdkAvailabilityStatus.SDK_AVAILABLE || !(await init())) return false;
+      return hasAll(await getGrantedPermissions());
     } catch {
       return false;
     }
@@ -61,6 +82,7 @@ export const healthImporter: HealthImporter = {
           startedAt: s.startTime,
           distanceM: distance.DISTANCE?.inMeters ?? 0,
           durationS: Math.round((Date.parse(s.endTime) - Date.parse(s.startTime)) / 1000),
+          sourceApp: s.metadata.dataOrigin ? APP_NAMES[s.metadata.dataOrigin] : undefined,
         });
       }
       pageToken = page.pageToken || undefined;
