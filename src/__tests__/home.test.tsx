@@ -69,7 +69,8 @@ test('full results show total, award and practice label', async () => {
     manualSession('run', '2026-10-01T10:00:00Z', 600),
   ] });
   expect(await screen.findByLabelText('Total 82/100')).toBeTruthy();
-  expect(screen.getByText('Silver')).toBeTruthy();
+  // Once on the award pill, once on the ladder under it.
+  expect(screen.getAllByText('Silver')).toHaveLength(2);
   expect(screen.getByText('3 points to Gold')).toBeTruthy();
   expect(screen.getByText('Practice estimate · age group 0 to 21')).toBeTruthy();
 });
@@ -104,7 +105,6 @@ test('deleting the newest push-up result falls back to the previous one on Home'
   const rows = await screen.findAllByTestId('session-value');
   await fireEvent.press(rows[0]); // newest first
   await fireEvent.press(screen.getByText('Delete'));
-  await fireEvent.press(screen.getByText('Yes, delete'));
   await fireEvent.press(screen.getByText('Home'));
   expect(await screen.findByText('30 reps')).toBeTruthy();
   expect(screen.queryByText('35 reps')).toBeNull();

@@ -1,24 +1,24 @@
 import { useEffect } from 'react';
 import { StyleSheet, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withDelay, withTiming } from 'react-native-reanimated';
-import Svg, { Circle, Path, Polygon } from 'react-native-svg';
+import Svg, { Path, Polygon } from 'react-native-svg';
+import { MEDAL_DISC as DISC, MEDAL_GOLD, MEDAL_VIEW, MEDAL_WREATH, RIBBON_DARK, RIBBON_LIGHT } from './emblemPaths';
 import { DURATION, EASE, EASE_STANDARD, useMotionOK } from './motion';
 import { colors } from './theme';
 
 /**
- * The Chiong Bah mark: a gold medal on a short V-shaped green ribbon, with two generic rank
- * chevrons on its face (redesign spec section 3.1). Drawn in a 120 × 140 box.
+ * The Chiong Bah mark: a gold medal on a short V-shaped green ribbon, with a runner in mid-stride
+ * cut out of its face, inside a laurel wreath. Drawn in a 1184 × 1720 box (see emblemPaths.ts).
  * No official crests, insignia, weapons or targets.
  */
-const VIEW_W = 120;
-const VIEW_H = 140;
-const DISC = { cx: 60, cy: 92, r: 38 };
+const VIEW_W = MEDAL_VIEW.w;
+const VIEW_H = MEDAL_VIEW.h;
 
 function Ribbon() {
   return (
     <>
-      <Polygon points="30,4 52,4 70,62 50,66" fill={colors.accent} />
-      <Polygon points="90,4 68,4 50,62 70,66" fill={colors.accentDark} />
+      <Path d={RIBBON_DARK} fill={colors.accentDark} fillRule="evenodd" />
+      <Path d={RIBBON_LIGHT} fill={colors.accent} fillRule="evenodd" />
     </>
   );
 }
@@ -26,22 +26,14 @@ function Ribbon() {
 function Disc() {
   return (
     <>
-      <Circle cx={DISC.cx} cy={DISC.cy} r={DISC.r} fill={colors.gold} />
-      <Circle cx={DISC.cx} cy={DISC.cy} r={30} fill="none" stroke={colors.goldDark} strokeWidth={2.5} />
-      <Path
-        d="M44 92 L60 76 L76 92 M44 106 L60 90 L76 106"
-        fill="none"
-        stroke={colors.bg}
-        strokeWidth={7}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
+      <Path d={MEDAL_GOLD} fill={colors.gold} fillRule="evenodd" />
+      <Path d={MEDAL_WREATH} fill={colors.goldDark} />
     </>
   );
 }
 
 type Props = {
-  /** Height in px; width follows the 120 × 140 proportions. */
+  /** Height in px; width follows the medal's proportions. */
   size?: number;
   /** Runs the splash entrance: medal rises, ribbon drops, a glint sweeps the disc. */
   animated?: boolean;
@@ -86,9 +78,9 @@ function AnimatedMedal({ width, height, a11y }: { width: number; height: number;
     opacity: medal.value,
     transform: [{ translateY: (1 - medal.value) * 14 }, { scale: 0.92 + 0.08 * medal.value }],
   }));
-  const ribbonStyle = useAnimatedStyle(() => ({ transform: [{ translateY: (ribbon.value - 1) * 10 * s }] }));
+  const ribbonStyle = useAnimatedStyle(() => ({ transform: [{ translateY: (ribbon.value - 1) * 120 * s }] }));
   // The band starts left of the disc and leaves past its right edge; reduced motion parks it off the disc.
-  const glintStyle = useAnimatedStyle(() => ({ transform: [{ translateX: glint.value * 200 * s }] }));
+  const glintStyle = useAnimatedStyle(() => ({ transform: [{ translateX: glint.value * 2100 * s }] }));
 
   const disc = { left: (DISC.cx - DISC.r) * s, top: (DISC.cy - DISC.r) * s, size: DISC.r * 2 * s };
   const viewBox = `0 0 ${VIEW_W} ${VIEW_H}`;
@@ -104,7 +96,7 @@ function AnimatedMedal({ width, height, a11y }: { width: number; height: number;
       >
         <Animated.View style={[{ position: 'absolute', left: -disc.left, top: -disc.top, width, height }, glintStyle]}>
           <Svg width={width} height={height} viewBox={viewBox}>
-            <Polygon points="-30,40 -12,40 -42,150 -60,150" fill={colors.goldShine} opacity={0.6} />
+            <Polygon points="-360,500 -150,500 -520,1800 -730,1800" fill={colors.goldShine} opacity={0.6} />
           </Svg>
         </Animated.View>
       </View>

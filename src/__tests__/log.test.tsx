@@ -48,20 +48,36 @@ test('log lists results newest first with source and date', async () => {
   expect(screen.getByText('13 pts')).toBeTruthy();
 });
 
-test('delete asks first, then removes the result', async () => {
+test('delete removes the result at once and Undo puts it back', async () => {
   const repos = setupTestApp({ now: NOW, profile: P, sessions: [manualSession('pushup', '2026-10-01T10:00:00Z', 30)] });
   await renderRouter(APP, { initialUrl: '/log' });
   await fireEvent.press(await screen.findByTestId('session-value'));
   await fireEvent.press(screen.getByText('Delete'));
-  expect(screen.getByText('Delete this result?')).toBeTruthy();
-  await fireEvent.press(screen.getByText('Cancel'));
-  expect(repos.sessions.list()).toHaveLength(1);
-  await fireEvent.press(screen.getByText('Delete'));
-  await fireEvent.press(screen.getByText('Yes, delete'));
   expect(repos.sessions.list()).toHaveLength(0);
   expect(await screen.findByText('No results yet. Add one after your next training session.')).toBeTruthy();
+  expect(screen.getByText('Push-ups result deleted')).toBeTruthy();
+  await fireEvent.press(screen.getByText('Undo'));
+  expect(repos.sessions.list()).toHaveLength(1);
+  expect(repos.sessions.list()[0]).toMatchObject({ station: 'pushup', validCount: 30, startedAt: '2026-10-01T10:00:00Z' });
 });
 
+test('screen readers can delete a result with the Delete action', async () => {
+  const repos = setupTestApp({ now: NOW, profile: P, sessions: [manualSession('pushup', '2026-10-01T10:00:00Z', 30)] });
+  await renderRouter(APP, { initialUrl: '/log' });
+  const row = await screen.findByRole('button', { name: /Push-ups/ });
+  await fireEvent(row, 'accessibilityAction', { nativeEvent: { actionName: 'delete' } });
+  expect(repos.sessions.list()).toHaveLength(0);
+});
+
+test('a station with more than one result marks its best', async () => {
+  setupTestApp({ now: NOW, profile: P, sessions: [
+    manualSession('pushup', '2026-10-01T10:00:00Z', 30),
+    manualSession('pushup', '2026-10-05T10:00:00Z', 36),
+    manualSession('situp', '2026-10-05T10:00:00Z', 40),
+  ] });
+  await renderRouter(APP, { initialUrl: '/log' });
+  expect(await screen.findAllByLabelText('Personal best')).toHaveLength(1);
+});
 
 test("today's results are headed 'Today' and the hint shows what a result is worth", async () => {
   setupTestApp({ now: NOW, profile: P, sessions: [manualSession('pushup', '2026-10-21T01:00:00Z', 42)] });

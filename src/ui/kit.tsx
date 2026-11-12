@@ -1,48 +1,68 @@
 import { ReactNode, useState } from 'react';
 import {
-  Pressable, PressableProps, RefreshControl, ScrollView, StyleProp, StyleSheet, Text, TextInput, TextStyle, View, ViewStyle,
+  Pressable, PressableProps, RefreshControl, StyleProp, StyleSheet, Text, TextInput, TextStyle, View, ViewStyle,
 } from 'react-native';
-import Animated, { useAnimatedStyle } from 'react-native-reanimated';
+import Animated, { interpolateColor, useAnimatedScrollHandler, useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
+import { Fab } from './interactive';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon, IconName } from './Icon';
-import { DURATION, useEnter } from './motion';
+import { haptic } from './haptics';
+import { DURATION, SPRING, useFollow, useMotionOK } from './motion';
 import { colors, fonts, gap, layout, MAX_FONT_SCALE, radius, tabular, type } from './theme';
 
 export { colors, fonts } from './theme';
 
 /* ───────────────────────── Pressable with focus ring ───────────────────────── */
 
+// Reanimated's animated style handles sit beside ordinary styles here.
+type PressStyle = StyleProp<ViewStyle> | any;
+
 type PressProps = Omit<PressableProps, 'style' | 'children'> & {
-  style?: StyleProp<ViewStyle> | ((s: { pressed: boolean }) => StyleProp<ViewStyle>);
+  /** Plain or Reanimated styles. */
+  style?: PressStyle;
   children: ReactNode;
   /** Corner radius of the focus ring, so it hugs the control. */
   ringRadius?: number;
+  /** How far the control sinks while held; 1 turns it off (rows inside a group). */
+  scaleTo?: number;
+  /** Touch feedback on press; none by default. */
+  feedback?: keyof typeof haptic;
 };
 
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
 /**
- * Pressable with the app's states (spec section 4.4): 0.85 opacity while pressed, 0.4 and not
- * focusable when disabled, and a 2 px accent ring 2 px outside the control when focused from a
- * keyboard or switch access.
+ * Pressable with the app's states: it sinks to 97 % on a quick spring while held (and springs
+ * back on release, so a tap always reads as a tap), 0.4 and not focusable when disabled, and a
+ * 2 px accent ring 2 px outside the control when focused from a keyboard or switch access.
  */
-export function Press({ style, children, disabled, ringRadius = radius.row, onFocus, onBlur, ...rest }: PressProps) {
+export function Press({ style, children, disabled, ringRadius = radius.row, onFocus, onBlur, onPressIn, onPressOut, onPress, scaleTo = 0.97, feedback, ...rest }: PressProps) {
   const [focused, setFocused] = useState(false);
+  const [held, setHeld] = useState(false);
+  const ok = useMotionOK();
+  const s = useSharedValue(1);
+  const sink = useAnimatedStyle(() => ({ transform: [{ scale: s.value }] }));
   return (
-    <Pressable
+    <AnimatedPressable
       {...rest}
       disabled={disabled}
       focusable={!disabled}
       accessibilityState={{ ...rest.accessibilityState, disabled: !!disabled }}
       onFocus={(e) => { setFocused(true); onFocus?.(e); }}
       onBlur={(e) => { setFocused(false); onBlur?.(e); }}
-      style={({ pressed }) => [
-        typeof style === 'function' ? style({ pressed }) : style,
-        pressed && !disabled && { opacity: 0.85 },
+      onPressIn={(e) => { setHeld(true); if (ok && scaleTo !== 1) s.set(withSpring(scaleTo, SPRING.press)); onPressIn?.(e); }}
+      onPressOut={(e) => { setHeld(false); s.set(ok ? withSpring(1, SPRING.settle) : 1); onPressOut?.(e); }}
+      onPress={onPress ? (e) => { if (feedback) haptic[feedback](); onPress(e); } : undefined}
+      style={[
+        ...(Array.isArray(style) ? style.flat(3) : [style]),
+        sink,
+        held && !disabled && scaleTo === 1 && { opacity: 0.85 },
         disabled && { opacity: 0.4 },
       ]}
     >
       {children}
       {focused ? <View pointerEvents="none" style={[styles.ring, { borderRadius: ringRadius + 4 }]} /> : null}
-    </Pressable>
+    </AnimatedPressable>
   );
 }
 
@@ -56,23 +76,38 @@ type ScreenProps = {
   /** 'tab' screens use 20 px sides; full screens and sheets use 24. */
   variant?: 'tab' | 'full' | 'sheet';
   gap?: number;
+  /** The screen's one primary action, as an extended FAB that folds while scrolling down. */
+  fab?: { label: string; onPress: () => void };
 };
 
 /** A scrolling page on the app background. Content and footer share one scroll so nothing clips at large text sizes. */
-export function Screen({ children, onRefresh, footer, variant = 'full', gap: g = 14 }: ScreenProps) {
-  const pad = variant === 'tab' ? { paddingHorizontal: 20, paddingTop: 24, paddingBottom: 16 }
+export function Screen({ children, onRefresh, footer, variant = 'full', gap: g = 14, fab }: ScreenProps) {
+  const pad = variant === 'tab' ? { paddingHorizontal: 20, paddingTop: 24, paddingBottom: fab ? 96 : 16 }
     : variant === 'sheet' ? { paddingHorizontal: layout.side, paddingTop: 32, paddingBottom: layout.bottom }
     : { paddingHorizontal: layout.side, paddingTop: 24, paddingBottom: layout.bottom };
+  const collapsed = useSharedValue(0);
+  const lastY = useSharedValue(0);
+  const onScroll = useAnimatedScrollHandler((e) => {
+    const y = e.contentOffset.y;
+    const dy = y - lastY.value;
+    if (y < 24) collapsed.value = 0;
+    else if (dy > 6) collapsed.value = 1;
+    else if (dy < -6) collapsed.value = 0;
+    lastY.value = y;
+  });
   return (
-    <SafeAreaView style={styles.safe} edges={variant === 'sheet' ? ['bottom'] : ['top', 'bottom']}>
-      <ScrollView
+    <SafeAreaView style={styles.safe} edges={variant === 'sheet' ? ['bottom'] : variant === 'tab' ? ['top'] : ['top', 'bottom']}>
+      <Animated.ScrollView
+        onScroll={fab ? onScroll : undefined}
+        scrollEventThrottle={16}
         contentContainerStyle={[styles.scroll, pad]}
         keyboardShouldPersistTaps="handled"
         refreshControl={onRefresh ? <RefreshControl refreshing={false} onRefresh={onRefresh} tintColor={colors.accent} colors={[colors.accent]} progressBackgroundColor={colors.surface} /> : undefined}
       >
         <View style={{ gap: g }}>{children}</View>
         {footer ? <View style={styles.footer}>{footer}</View> : null}
-      </ScrollView>
+      </Animated.ScrollView>
+      {fab ? <Fab label={fab.label} onPress={fab.onPress} collapsed={collapsed} /> : null}
     </SafeAreaView>
   );
 }
@@ -149,6 +184,7 @@ export function Button({ label, onPress, variant, secondary, disabled, icon, acc
       accessibilityHint={accessibilityHint}
       onPress={onPress}
       disabled={disabled}
+      feedback={v === 'primary' ? 'tap' : undefined}
       style={[styles.button, BUTTON[v]]}
     >
       {icon ? <Icon name={icon} size={16} color={textColor} /> : null}
@@ -197,19 +233,63 @@ export function IconButton({ icon, label, onPress, variant = 'plain', size = 44,
 
 /* ───────────────────────── Choices ───────────────────────── */
 
-/** Rounded chip in a segmented row. */
+/** Rounded chip in a segmented row. Its fill cross-fades to accent when chosen. */
 export function Chip({ label, selected, onPress, height = 40 }: { label: string; selected: boolean; onPress: () => void; height?: number }) {
+  const t = useFollow(selected ? 1 : 0, { duration: 220, initial: selected ? 1 : 0 });
+  const fill = useAnimatedStyle(() => ({ backgroundColor: interpolateColor(t.value, [0, 1], [colors.chip, colors.accent]) }));
   return (
     <Press
       accessibilityRole="radio"
       accessibilityState={{ selected, checked: selected }}
       onPress={onPress}
+      feedback={selected ? undefined : 'tick'}
       ringRadius={height / 2}
       hitSlop={(layout.touch - height) / 2 > 0 ? (layout.touch - height) / 2 : 0}
-      style={[styles.chip, { height, borderRadius: height / 2 }, selected && styles.chipSelected]}
+      style={[styles.chip, { height, borderRadius: height / 2 }, fill]}
     >
       <Text style={[styles.chipText, selected && styles.chipTextSelected]}>{label}</Text>
     </Press>
+  );
+}
+
+/**
+ * One choice from two to four short options on a single track. The accent pill slides to the
+ * chosen option, so the change reads as a move rather than a blink.
+ */
+export function Segmented<T extends string>({ options, value, onChange, accessibilityLabel }: {
+  options: { value: T; label: string }[];
+  value: T;
+  onChange: (v: T) => void;
+  accessibilityLabel?: string;
+}) {
+  const [boxes, setBoxes] = useState<Record<string, { x: number; w: number }>>({});
+  const box = boxes[value];
+  const x = useFollow(box?.x ?? 0, { duration: 300, initial: box?.x ?? 0 });
+  const w = useFollow(box?.w ?? 0, { duration: 300, initial: box?.w ?? 0 });
+  const pill = useAnimatedStyle(() => ({ width: w.value, transform: [{ translateX: x.value }] }));
+  return (
+    <View style={styles.segTrack} accessibilityRole="radiogroup" accessibilityLabel={accessibilityLabel}>
+      {box ? <Animated.View pointerEvents="none" style={[styles.segPill, pill]} /> : null}
+      {options.map((o) => {
+        const selected = o.value === value;
+        return (
+          <Press
+            key={o.value}
+            accessibilityRole="radio"
+            accessibilityState={{ selected, checked: selected }}
+            onPress={() => { if (!selected) { haptic.tick(); onChange(o.value); } }}
+            onLayout={(e) => {
+              const { x: lx, width } = e.nativeEvent.layout;
+              setBoxes((b) => (b[o.value]?.x === lx && b[o.value]?.w === width ? b : { ...b, [o.value]: { x: lx, w: width } }));
+            }}
+            ringRadius={20}
+            style={styles.segItem}
+          >
+            <Text style={[styles.segText, selected && styles.segTextSelected]} numberOfLines={1} maxFontSizeMultiplier={MAX_FONT_SCALE}>{o.label}</Text>
+          </Press>
+        );
+      })}
+    </View>
   );
 }
 
@@ -217,20 +297,33 @@ export function ChipRow({ children }: { children: ReactNode }) {
   return <View style={styles.chipRow} accessibilityRole="radiogroup">{children}</View>;
 }
 
-/** A large single-choice option with a title and a one-line explanation. */
+/**
+ * A large single-choice option with a title and a one-line explanation. Choosing it tints the
+ * card and border and springs the radio dot in, so the answer visibly lands.
+ */
 export function ChoiceCard({ title, detail, selected, onPress }: { title: string; detail?: string; selected: boolean; onPress: () => void }) {
+  const t = useFollow(selected ? 1 : 0, { duration: 220, initial: selected ? 1 : 0 });
+  const ok = useMotionOK();
+  const card = useAnimatedStyle(() => ({
+    backgroundColor: interpolateColor(t.value, [0, 1], [colors.surface, colors.surfaceSelected]),
+    borderColor: interpolateColor(t.value, [0, 1], [colors.border, colors.accent]),
+  }));
+  const ring = useAnimatedStyle(() => ({ borderColor: interpolateColor(t.value, [0, 1], [colors.muted, colors.accent]) }));
+  const dot = useAnimatedStyle(() => ({ transform: [{ scale: ok ? withSpring(selected ? 1 : 0, SPRING.pop) : selected ? 1 : 0 }] }));
   return (
     <Press
       accessibilityRole="radio"
       accessibilityState={{ selected, checked: selected }}
       onPress={onPress}
-      style={[styles.choice, selected && styles.choiceSelected]}
+      feedback={selected ? undefined : 'tick'}
+      scaleTo={0.98}
+      style={[styles.choice, card]}
     >
       <View style={styles.choiceText}>
         <Text style={styles.choiceTitle}>{title}</Text>
         {detail ? <Text style={styles.choiceDetail}>{detail}</Text> : null}
       </View>
-      <View style={[styles.radio, selected && styles.radioSelected]}>{selected ? <View style={styles.radioDot} /> : null}</View>
+      <Animated.View style={[styles.radio, ring]}><Animated.View style={[styles.radioDot, dot]} /></Animated.View>
     </Press>
   );
 }
@@ -306,11 +399,11 @@ export function ProgressBar({ value, max, height = 6, from = 0, delay = 0, durat
   accessibilityLabel?: string;
 }) {
   const fraction = Math.max(0, Math.min(1, max > 0 ? value / max : 0));
-  const t = useEnter({ duration, delay, from, key: fraction });
+  // Fills from `from` of its value the first time, then glides between values as they change.
+  const f = useFollow(fraction, { duration, delay, initial: from * fraction });
   const [width, setWidth] = useState(0);
-  const fillWidth = width * fraction;
   // Scale about the left edge: shift by half the lost width so the bar grows rightwards.
-  const style = useAnimatedStyle(() => ({ transform: [{ translateX: -(fillWidth * (1 - t.value)) / 2 }, { scaleX: t.value }] }));
+  const style = useAnimatedStyle(() => ({ transform: [{ translateX: -(width * (1 - f.value)) / 2 }, { scaleX: f.value }] }));
   return (
     <View
       style={[styles.track, { height, borderRadius: height / 2 }]}
@@ -320,7 +413,7 @@ export function ProgressBar({ value, max, height = 6, from = 0, delay = 0, durat
       accessibilityLabel={accessibilityLabel}
       accessibilityValue={accessibilityLabel ? { min: 0, max: 100, now: Math.round(fraction * 100) } : undefined}
     >
-      <Animated.View style={[{ width: fillWidth, height, borderRadius: height / 2, backgroundColor: colors.accent }, style]} />
+      <Animated.View style={[{ width, height, borderRadius: height / 2, backgroundColor: colors.accent }, style]} />
     </View>
   );
 }
@@ -383,6 +476,11 @@ export const styles = StyleSheet.create({
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: gap.xs },
   chip: { paddingHorizontal: 16, backgroundColor: colors.chip, alignItems: 'center', justifyContent: 'center' },
   chipSelected: { backgroundColor: colors.accent },
+  segTrack: { flexDirection: 'row', backgroundColor: colors.chip, borderRadius: 22, padding: 4, minHeight: 48 },
+  segPill: { position: 'absolute', top: 4, bottom: 4, left: 0, borderRadius: 18, backgroundColor: colors.accent },
+  segItem: { flex: 1, minHeight: 40, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 10, borderRadius: 18 },
+  segText: { fontFamily: fonts.medium, fontSize: 15, color: colors.text },
+  segTextSelected: { fontFamily: fonts.semibold, color: colors.bg },
   chipText: { fontFamily: fonts.body, color: colors.text, fontSize: 15 },
   chipTextSelected: { fontFamily: fonts.semibold, color: colors.bg },
   choice: { flexDirection: 'row', alignItems: 'center', gap: gap.m, backgroundColor: colors.surface, borderRadius: radius.row, borderWidth: 1, borderColor: colors.border, padding: 16, minHeight: 64 },
