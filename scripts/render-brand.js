@@ -9,8 +9,12 @@ const { chromium } = require('playwright');
 const ROOT = path.resolve(__dirname, '..');
 const BG = '#0B0D0A';
 const medal = fs.readFileSync(path.join(ROOT, 'assets/brand/medal.svg'), 'utf8').replace(/<title>.*?<\/title>/, '');
-// Monochrome icon: one colour. The runner is already cut out of the gold, so the shape still reads.
-const mono = medal.replace(/fill="#[0-9A-Fa-f]{6}"/g, 'fill="white"');
+// Monochrome icon: one colour. The runner is already cut out of the gold; the wreath is cut out too.
+const wreath = /<path id="wreath" d="([^"]+)"[^>]*\/>/.exec(medal);
+const mono = medal
+  .replace(wreath[0], '')
+  .replace('<path id="medal"', `<defs><mask id="cut"><rect width="100%" height="100%" fill="white"/><path d="${wreath[1]}" fill="black"/></mask></defs><path id="medal" mask="url(#cut)"`)
+  .replace(/fill="#[0-9A-Fa-f]{6}"/g, 'fill="white"');
 const [VW, VH] = /viewBox="0 0 (\d+) (\d+)"/.exec(medal).slice(1).map(Number);
 
 /** A square (or w × h) page with the medal `height` px tall, centred, on `bg`. */

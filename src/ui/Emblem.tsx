@@ -2,13 +2,13 @@ import { useEffect } from 'react';
 import { StyleSheet, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withDelay, withTiming } from 'react-native-reanimated';
 import Svg, { Path, Polygon } from 'react-native-svg';
-import { MEDAL_DISC as DISC, MEDAL_GOLD, MEDAL_VIEW, RIBBON_DARK, RIBBON_LIGHT } from './emblemPaths';
+import { MEDAL_DISC as DISC, MEDAL_GOLD, MEDAL_VIEW, MEDAL_WREATH, RIBBON_DARK, RIBBON_LIGHT } from './emblemPaths';
 import { DURATION, EASE, EASE_STANDARD, useMotionOK } from './motion';
 import { colors } from './theme';
 
 /**
  * The Chiong Bah mark: a gold medal on a short V-shaped green ribbon, with a runner in mid-stride
- * cut out of its face. Drawn in a 1184 × 1720 box (see emblemPaths.ts).
+ * cut out of its face, inside a laurel wreath. Drawn in a 1184 × 1720 box (see emblemPaths.ts).
  * No official crests, insignia, weapons or targets.
  */
 const VIEW_W = MEDAL_VIEW.w;
@@ -24,7 +24,12 @@ function Ribbon() {
 }
 
 function Disc() {
-  return <Path d={MEDAL_GOLD} fill={colors.gold} fillRule="evenodd" />;
+  return (
+    <>
+      <Path d={MEDAL_GOLD} fill={colors.gold} fillRule="evenodd" />
+      <Path d={MEDAL_WREATH} fill={colors.goldDark} />
+    </>
+  );
 }
 
 type Props = {
