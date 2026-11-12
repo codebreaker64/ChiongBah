@@ -6,12 +6,15 @@ import { scoringAge } from '@/domain/profile';
 import { bandForAge, Station, stationPoints, STATIONS } from '@/domain/scoring/table';
 import { currentTable } from '@/domain/scoring/tables';
 import { Icon } from '@/ui/Icon';
-import { Button, Chip, ChipRow, Field, Press, Screen, SheetHandle, Title } from '@/ui/kit';
+import { haptic } from '@/ui/haptics';
+import { Button, Field, Press, Screen, Segmented, SheetHandle, Title } from '@/ui/kit';
+import { swapIn, swapOut, useCountUp } from '@/ui/motion';
 import { STATION_LABEL } from '@/ui/labels';
 import { colors, fonts, MAX_FONT_SCALE, radius, tabular } from '@/ui/theme';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
+import Animated from 'react-native-reanimated';
 
 const ERRORS = {
   reps: { format: 'Enter a whole number of reps.', range: 'Reps must be between 0 and 100.' },
@@ -25,6 +28,11 @@ function compareToBest(station: Station, value: number, best: number | null): st
   if (diff === 0) return 'Equals your best';
   if (station === 'run') return `${Math.abs(diff)} s ${diff > 0 ? 'faster' : 'slower'} than your best`;
   return `${Math.abs(diff)} ${diff > 0 ? 'more' : 'fewer'} than your best`;
+}
+
+/** Points the typed result is worth; rolls as the number is typed, so each digit shows its effect. */
+function WorthPoints({ value }: { value: number }) {
+  return <Text style={styles.worthPoints} maxFontSizeMultiplier={MAX_FONT_SCALE}>{`${useCountUp(value, 260)} pts`}</Text>;
 }
 
 export default function NewEntry() {
@@ -44,9 +52,11 @@ export default function NewEntry() {
 
   const save = () => {
     if (!parsed.ok) {
+      haptic.warn();
       setError(ERRORS[isRun ? 'run' : 'reps'][parsed.error]);
       return;
     }
+    haptic.success();
     repos.sessions.add({
       station, source: 'manual', startedAt: now().toISOString(),
       validCount: isRun ? null : parsed.value, runTimeS: isRun ? parsed.value : null,
@@ -60,11 +70,12 @@ export default function NewEntry() {
     <Screen variant="sheet" gap={20} footer={<><Button label="Save" onPress={save} /><Button label="Cancel" secondary onPress={close} /></>}>
       <SheetHandle />
       <Title>Add result</Title>
-      <ChipRow>
-        {STATIONS.map((s) => (
-          <Chip key={s} label={STATION_LABEL[s]} selected={station === s} onPress={() => { setStation(s); setError(undefined); setText(''); }} />
-        ))}
-      </ChipRow>
+      <Segmented
+        accessibilityLabel="Station"
+        options={STATIONS.map((s) => ({ value: s, label: STATION_LABEL[s] }))}
+        value={station}
+        onChange={(s) => { setStation(s); setError(undefined); setText(''); }}
+      />
       <Field
         label={isRun ? 'Time (m:ss)' : 'Reps'}
         value={text}
@@ -75,13 +86,13 @@ export default function NewEntry() {
         onSubmitEditing={save}
       />
       {parsed.ok && worth !== null ? (
-        <View style={styles.worth} accessible accessibilityLiveRegion="polite" accessibilityLabel={`Worth ${worth} points. ${compareToBest(station, parsed.value, best[station])}`}>
+        <Animated.View entering={swapIn} exiting={swapOut} style={styles.worth} accessible accessibilityLiveRegion="polite" accessibilityLabel={`Worth ${worth} points. ${compareToBest(station, parsed.value, best[station])}`}>
           <View style={{ gap: 2, flex: 1 }}>
             <Text style={styles.worthLabel}>Worth</Text>
             <Text style={styles.worthDetail}>{compareToBest(station, parsed.value, best[station])}</Text>
           </View>
-          <Text style={styles.worthPoints} maxFontSizeMultiplier={MAX_FONT_SCALE}>{`${worth} pts`}</Text>
-        </View>
+          <WorthPoints value={worth} />
+        </Animated.View>
       ) : null}
       {!isRun ? (
         <Press accessibilityRole="link" onPress={() => router.replace({ pathname: '/camera', params: { station } })} style={styles.cameraLink} hitSlop={8}>

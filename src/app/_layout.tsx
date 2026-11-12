@@ -9,7 +9,7 @@ import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useEffect, useState } from 'react';
-import { View } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 // Keep the system splash (static medal) up until the fonts are ready, then cross-fade to the animated one.
 SplashScreen.preventAutoHideAsync().catch(() => {});
@@ -37,7 +37,7 @@ export default function RootLayout() {
   return (
     <RepositoriesProvider repos={repos}>
       <StatusBar style="light" />
-      <View style={{ flex: 1, backgroundColor: colors.bg }}>
+      <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.bg }}>
         <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg }, animation: 'fade' }}>
           <Stack.Screen name="(tabs)" />
           <Stack.Screen name="onboarding" />
@@ -50,7 +50,7 @@ export default function RootLayout() {
           <Stack.Screen name="privacy" options={{ ...docHeader, title: 'Privacy Policy' }} />
         </Stack>
         {showSplash ? <SplashOverlay onDone={hideSplash} /> : null}
-      </View>
+      </GestureHandlerRootView>
     </RepositoriesProvider>
   );
 }

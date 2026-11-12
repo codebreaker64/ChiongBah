@@ -17,6 +17,8 @@ export const colors = {
   gold: '#E0B354',
   goldDark: '#B98C34',
   goldShine: '#FFF3D1',
+  /** Silver award: a cool grey that reads as metal beside the gold. */
+  silver: '#C3CBC6',
   danger: '#FF6B5E',
   cameraBg: '#1A1E17',
   cameraFloor: '#141712',

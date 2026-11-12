@@ -9,12 +9,20 @@ import { scoringAge } from '@/domain/profile';
 import { Award, awardFor, awardLadder, awardRules, scoreIppt, StationResults } from '@/domain/scoring/awards';
 import { bandForAge, ScoringTable, Station, STATIONS } from '@/domain/scoring/table';
 import { currentTable } from '@/domain/scoring/tables';
-import { Body, Button, Card, Chip, ChipRow, Field, IconButton, ListRow, ProgressBar, RowGroup, Screen, Title } from '@/ui/kit';
+import { Stepper } from '@/ui/interactive';
+import { Body, Button, Chip, ChipRow, Field, ListRow, ProgressBar, RowGroup, Screen, Segmented, Title } from '@/ui/kit';
+import { enter, reflow, swapIn, useCountUp } from '@/ui/motion';
 import { AWARD_LABEL, formatResult, formatValue, plural, STATION_LABEL } from '@/ui/labels';
-import { colors, fonts, MAX_FONT_SCALE, tabular } from '@/ui/theme';
+import { colors, fonts, MAX_FONT_SCALE, radius, tabular } from '@/ui/theme';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
+import Animated from 'react-native-reanimated';
+
+/** A number that rolls from its last value to the new one (switching targets, logging a result). */
+function RollingNumber({ value, style }: { value: number; style: object }) {
+  return <Text style={style} maxFontSizeMultiplier={MAX_FONT_SCALE}>{String(useCountUp(value, 500))}</Text>;
+}
 
 const goalName = (g: GoalTarget) => (g.kind === 'award' ? AWARD_LABEL[g.award] : `${g.points}`);
 
@@ -34,24 +42,30 @@ function WhatIf({ latest, age, table, profile }: { latest: StationResults; age: 
   const gained = (result.points[station] ?? 0) - (now0.points[station] ?? 0);
   const change = isRun ? `${delta} s faster` : `+${delta} reps`;
   const step = (dir: 1 | -1) => setDelta((d) => Math.max(0, d + dir * STEP[station]));
+  const changed = !!now0.award && result.award !== now0.award;
   return (
-    <Card>
+    <Animated.View entering={enter(3)} style={styles.card}>
       <Text style={styles.cardHeading}>What if</Text>
-      <ChipRow>
-        {STATIONS.map((s) => (
-          <Chip key={s} height={36} label={STATION_LABEL[s]} selected={station === s} onPress={() => { setStation(s); setDelta(0); }} />
-        ))}
-      </ChipRow>
-      <View style={styles.stepper}>
-        <IconButton icon="minus" variant="outline" iconSize={20} strokeWidth={2.4} label={isRun ? 'Slower' : 'Fewer reps'} onPress={() => step(-1)} />
-        <View style={styles.stepValue} accessibilityLiveRegion="polite">
-          <Text style={styles.stepMain} maxFontSizeMultiplier={MAX_FONT_SCALE}>{isRun ? formatValue(station, value) : formatResult(station, value)}</Text>
-          <Text style={styles.small}>{delta === 0 ? 'Your latest' : `${change} · +${gained} pts`}</Text>
-        </View>
-        <IconButton icon="plus" variant="outline" iconSize={20} strokeWidth={2.4} label={isRun ? 'Faster' : 'More reps'} onPress={() => step(1)} />
-      </View>
-      <Text style={styles.whatIfResult}>{`Total ${result.total}/100 · ${AWARD_LABEL[result.award]}`}</Text>
-    </Card>
+      <Segmented
+        accessibilityLabel="Station"
+        options={STATIONS.map((s) => ({ value: s, label: STATION_LABEL[s] }))}
+        value={station}
+        onChange={(s) => { setStation(s); setDelta(0); }}
+      />
+      <Stepper
+        value={value}
+        onStep={step}
+        display={isRun ? formatValue(station, value) : formatResult(station, value)}
+        caption={delta === 0 ? 'Your latest' : `${change} · +${gained} pts`}
+        canDown={delta > 0}
+        canUp={isRun ? value > 420 : value < 100}
+        labelDown={isRun ? 'Slower' : 'Fewer reps'}
+        labelUp={isRun ? 'Faster' : 'More reps'}
+      />
+      <Animated.View key={`${result.award}`} entering={changed ? swapIn : undefined} style={[styles.whatIfBox, changed && styles.whatIfBoxUp]}>
+        <Text style={[styles.whatIfResult, changed && styles.whatIfResultUp]}>{`Total ${result.total}/100 · ${AWARD_LABEL[result.award]}`}</Text>
+      </Animated.View>
+    </Animated.View>
   );
 }
 
@@ -107,14 +121,14 @@ export default function Goals() {
       <Title>Goals</Title>
 
       {ok && goal ? (
-        <Card style={styles.headerCard}>
+        <Animated.View entering={enter(0)} style={[styles.card, styles.headerCard]}>
           {ok.total === null ? <Text style={styles.status}>Log all three stations to see your gap.</Text>
             : ok.met ? <Text style={styles.status}>Target met</Text>
             : ok.pointsNeeded === 0 ? <Text style={styles.status}>Every station needs at least 1 point.</Text>
             : (
               <View style={styles.gapRow}>
                 <View style={styles.gapValue} accessible accessibilityLabel={`${plural(ok.pointsNeeded ?? 0, 'point')} to ${goalName(goal)}`}>
-                  <Text style={styles.gapNumber} maxFontSizeMultiplier={MAX_FONT_SCALE}>{String(ok.pointsNeeded)}</Text>
+                  <RollingNumber value={ok.pointsNeeded ?? 0} style={styles.gapNumber} />
                   <Text style={styles.gapCaption}>{`${ok.pointsNeeded === 1 ? 'point' : 'points'} to ${goalName(goal)}`}</Text>
                 </View>
                 <Text style={styles.small}>{deadlineText}</Text>
@@ -129,14 +143,14 @@ export default function Goals() {
               </View>
             </>
           ) : <Text style={styles.small}>{`Target ${ok.targetPoints} points · ${deadlineText}`}</Text>}
-        </Card>
+        </Animated.View>
       ) : null}
 
       {!goal ? <Body muted>Pick a target to see your gap.</Body> : null}
       {goal && !currentTable ? <Body muted>Scoring tables not added yet.</Body> : null}
       {progress && 'error' in progress ? <Body muted>{"We can't score your age group yet."}</Body> : null}
 
-      <Card>
+      <Animated.View entering={enter(1)} layout={reflow} style={styles.card}>
         <Text style={styles.cardHeading}>Target</Text>
         <ChipRow>
           {[...ladder].reverse().map((a: Exclude<Award, 'fail'>) => (
@@ -146,15 +160,15 @@ export default function Goals() {
           <Chip height={36} label="Custom score" selected={customOpen || goal?.kind === 'score'} onPress={() => setCustomOpen(true)} />
         </ChipRow>
         {customOpen ? (
-          <View style={{ gap: 10 }}>
+          <Animated.View entering={swapIn} style={{ gap: 10 }}>
             <Field label="Custom score" value={customText} onChangeText={(t) => { setCustomText(t); setCustomError(undefined); }} error={customError} keyboardType="number-pad" placeholder="70" onSubmitEditing={saveCustom} />
             <Button secondary label="Set target" onPress={saveCustom} />
-          </View>
+          </Animated.View>
         ) : null}
-      </Card>
+      </Animated.View>
 
       {route && goal && ok && ok.total !== null ? (
-        <Card>
+        <Animated.View entering={enter(2)} layout={reflow} style={styles.card}>
           <Text style={styles.cardHeading}>{`Easiest route to ${goalName(goal)}`}</Text>
           {route.steps.map((s) => (
             <View key={s.station} style={styles.routeRow}>
@@ -172,7 +186,7 @@ export default function Goals() {
               {`${ok.total + route.pointsGained}${routeAward ? ` · ${AWARD_LABEL[routeAward]}` : ''}`}
             </Text>
           </View>
-        </Card>
+        </Animated.View>
       ) : null}
 
       {ok && ok.total !== null && currentTable ? <WhatIf latest={latest} age={age} table={currentTable} profile={profile} /> : null}
@@ -198,8 +212,9 @@ const styles = StyleSheet.create({
   routeStation: { fontFamily: fonts.medium, fontSize: 15, color: colors.text, ...tabular },
   gain: { fontFamily: fonts.semibold, fontSize: 15, color: colors.accent, ...tabular },
   rule: { height: 1, backgroundColor: colors.border },
-  stepper: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  stepValue: { alignItems: 'center' },
-  stepMain: { fontSize: 34, lineHeight: 36, fontFamily: fonts.display, color: colors.text, ...tabular },
-  whatIfResult: { fontFamily: fonts.body, fontSize: 14, color: colors.muted, textAlign: 'center', ...tabular },
+  card: { backgroundColor: colors.surface, borderRadius: radius.card, borderWidth: 1, borderColor: colors.border, padding: 16, gap: 12 },
+  whatIfBox: { borderRadius: 12, paddingVertical: 10, alignItems: 'center', backgroundColor: colors.chip },
+  whatIfBoxUp: { backgroundColor: '#2A2416', borderWidth: 1, borderColor: colors.goldDark },
+  whatIfResult: { fontFamily: fonts.medium, fontSize: 15, color: colors.text, textAlign: 'center', ...tabular },
+  whatIfResultUp: { fontFamily: fonts.semibold, color: colors.gold },
 });
